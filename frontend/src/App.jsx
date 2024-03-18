@@ -3,9 +3,18 @@ import { mutators } from './utils/mutators';
 import Syncosaurus from './utils/syncosaurus.js';
 import { useSubscribe } from './utils/react.js';
 
+class User {
+  constructor() {
+    this.id = Math.random();
+  }
+}
+
+const user = new User();
+
 //create an instance of the syncosaurus class, known as a client
 const r = new Syncosaurus({
   mutators,
+  userID: user.id,
 });
 
 const incrementKey = 'count';
