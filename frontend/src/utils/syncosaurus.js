@@ -63,7 +63,7 @@ export default class Syncosaurus {
     this.replayMutate = {};
     for (let mutator in mutators) {
       this.mutate[mutator] = args => {
-        const transaction = new Transaction(this.localState, this.notify, mutator, args, 'initial');
+        const transaction = new Transaction(this.localState, this.notify.bind(this), mutator, args, 'initial');
         this.txQueue.push(transaction);
         mutators[mutator](transaction, args); //execute mutator on local state
         //send transaction to the server if this is the first time and not a replay
@@ -78,7 +78,7 @@ export default class Syncosaurus {
       };
 
       this.replayMutate[mutator] = args => {
-        const transaction = new Transaction(this.localState, this.notify, mutator, args, 'replay');
+        const transaction = new Transaction(this.localState, this.notify.bind(this), mutator, args, 'replay');
         mutators[mutator](transaction, args);
       };
     }
