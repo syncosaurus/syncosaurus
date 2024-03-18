@@ -17,7 +17,7 @@ export default class Syncosaurus {
 
       //remove pending event from queue
       this.txQueue = this.txQueue.filter(
-        tx => tx.id !== response.transactionID
+        tx => tx.transactionID !== response.transactionID
       );
 
       //update cannon and cannon clone to be the result from the server
@@ -54,22 +54,14 @@ export default class Syncosaurus {
     this.replayMutate = {};
     for (let mutator in mutators) {
       this.mutate[mutator] = args => {
-        const transaction = new Transaction(this.localState, this.notify, mutator, args, 'initial');
+        const transaction = new Transaction(this, mutator, args, 'initial');
         this.txQueue.push(transaction);
         mutators[mutator](transaction, args); //execute mutator on local state
-        //send transaction to the server if this is the first time and not a replay
-        this.socket.send(
-          JSON.stringify({
-            transactionID: transaction.id,
-            mutator: mutator,
-            mutatorArgs: args,
-          })
-        );
         console.log('local state', this.localState);
       };
 
       this.replayMutate[mutator] = args => {
-        const transaction = new Transaction(this.localState, this.notify, mutator, args, 'replay');
+        const transaction = new Transaction(this, mutator, args, 'replay');
         mutators[mutator](transaction, args);
       };
     }
