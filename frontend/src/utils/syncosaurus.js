@@ -75,17 +75,10 @@ export default class Syncosaurus {
         mutators[mutator](transaction, args);
       };
     }
-    /*
-
-
-      }
-
-    */
 
     this.subscriptions = {};
   }
-  // query | tx => tx.get('count') but for now i'm using 'count'
-  // callback | newData => {setData(newData)});
+
   subscribe(query, callback) {
     if (!this.subscriptions[query]) {
       this.subscriptions[query] = [];

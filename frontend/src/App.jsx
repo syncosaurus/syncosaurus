@@ -2,10 +2,13 @@ import './App.css';
 import { mutators } from './utils/mutators';
 import Syncosaurus from './utils/syncosaurus.js';
 import { useSubscribe } from './utils/react.js';
+import { v4 as uuidv4 } from 'uuid';
 
+
+// TODO MOVE THIS ELSEWHERE
 class User {
   constructor() {
-    this.id = Math.random();
+    this.id = uuidv4();
   }
 }
 

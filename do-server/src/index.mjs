@@ -33,6 +33,7 @@ export class WebSocketServer {
     this.state = state;
     this.env = env;
     this.connections = [];
+    this.clientIDs = {};
 
     // `blockConcurrencyWhile()` ensures no requests are delivered until initialization completes.
     this.state.blockConcurrencyWhile(async () => {
