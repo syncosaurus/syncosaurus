@@ -1,38 +1,29 @@
 import { v4 as uuidv4 } from 'uuid';
 
 export class Transaction {
-  constructor(syncosaurus, mutator, args, reason) {
-    this.transactionID = String(Date.now()) + '_' + uuidv4();
-    this.syncosaurus = syncosaurus;
+  constructor(localState, notify, mutator, args, reason) {
+    this.id = String(Date.now()) + '_' + uuidv4();
+    this.localState = localState;
+    this.notify = notify;
     this.mutator = mutator;
     this.mutatorArgs = args;
     this.reason = reason;
   }
 
   get(key) {
-    return this.syncosaurus.localState[key];
+    return this.localState[key];
   }
 
   set(key, value) {
     if (this.reason === 'initial') {
-      this.syncosaurus.localState[key] = value; //update local KV
-
-      this.syncosaurus.notify(key, { ...this.syncosaurus.localState }); //alert subscribers so that
-
-      //send transaction to the server if this is the first time and not a replay
-      this.syncosaurus.socket.send(
-        JSON.stringify({
-          transactionID: this.transactionID,
-          mutator: this.mutator,
-          mutatorArgs: this.mutatorArgs,
-        })
-      ); // send transactionId, mutator name, and arguments through websocket if the frist time
+      this.localState[key] = value; //update local KV
+      this.notify(key, { ...this.localState }); //alert subscribers of change
     } else if (this.reason === 'replay') {
-      this.syncosaurus.localState[key] = value; //update local KV
+      this.localState[key] = value; //update local KV
     }
   }
 
   delete(key) {
-    this.syncosaurus.localState.delete(key);
+    this.localState.delete(key);
   }
 }
