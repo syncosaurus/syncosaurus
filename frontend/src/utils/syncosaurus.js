@@ -13,7 +13,9 @@ export default class Syncosaurus {
     //When message received from websocket, update canon state and re-run pending mutations
     this.socket.addEventListener('message', event => {
       //parse websocket response
-      const { latestTransactionByClientId, snapshotID, patch, canonState } = JSON.parse(event.data);
+      console.log(JSON.parse(event.data));
+      const { latestTransactionByClientId, snapshotID, patch, canonState } =
+        JSON.parse(event.data);
 
       if (canonState) {
         this.localState = canonState;
@@ -28,11 +30,11 @@ export default class Syncosaurus {
 
       //iterate through patch updates and run them on local state
       patch.forEach(operation => {
-        if (operation.op === "put") {
+        if (operation.op === 'put') {
           this.localState[operation.key] = operation.value;
-        } else if (operation.op === "del") {
+        } else if (operation.op === 'del') {
           delete this.localState[operation.key];
-        } else if (operation.op === "clear") {
+        } else if (operation.op === 'clear') {
           this.localState = {};
         }
       });
@@ -63,7 +65,13 @@ export default class Syncosaurus {
     this.replayMutate = {};
     for (let mutator in mutators) {
       this.mutate[mutator] = args => {
-        const transaction = new Transaction(this.localState, this.notify.bind(this), mutator, args, 'initial');
+        const transaction = new Transaction(
+          this.localState,
+          this.notify.bind(this),
+          mutator,
+          args,
+          'initial'
+        );
         this.txQueue.push(transaction);
         mutators[mutator](transaction, args); //execute mutator on local state
         //send transaction to the server if this is the first time and not a replay
@@ -78,7 +86,13 @@ export default class Syncosaurus {
       };
 
       this.replayMutate[mutator] = args => {
-        const transaction = new Transaction(this.localState, this.notify.bind(this), mutator, args, 'replay');
+        const transaction = new Transaction(
+          this.localState,
+          this.notify.bind(this),
+          mutator,
+          args,
+          'replay'
+        );
         mutators[mutator](transaction, args);
       };
     }

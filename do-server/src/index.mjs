@@ -47,12 +47,13 @@ export default {
 // Durable Object
 export class WebSocketServer {
   constructor(state, env) {
+    this.mutators = mutators;
     this.state = state;
     this.env = env;
     this.connections = [];
     this.latestTransactionByClientId = {};
     this.currentSnapshotID = 0;
-    this.mutators = mutators;
+    this.patch = [];
 
     // `blockConcurrencyWhile()` ensures no requests are delivered until initialization completes.
     this.state.blockConcurrencyWhile(async () => {
@@ -64,7 +65,7 @@ export class WebSocketServer {
         this.state.blockConcurrencyWhile(() => {
           const currentSnapshot = {
             snapshotID: this.currentSnapshotID,
-            canon: this.canon,
+            patch: this.patch,
             latestTransactionByClientId: this.latestTransactionByClientId,
           };
 
@@ -72,6 +73,7 @@ export class WebSocketServer {
           this.broadcast(json);
 
           this.currentSnapshotID += 1; // TODO convert to uulid?
+          this.patch = [];
         }),
       1000
     );
@@ -107,14 +109,12 @@ export class WebSocketServer {
           return;
         }
 
-        const patch = [];
-
         const canonTx = new ServerTransaction(
           this.canon,
           transactionID,
           mutator,
           mutatorArgs,
-          patch
+          this.patch
         );
 
         this.mutators[mutator](canonTx, mutatorArgs);
