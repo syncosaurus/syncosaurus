@@ -1,10 +1,12 @@
 import { mutators } from '../../frontend/src/utils/mutators.js';
 
 class ServerTransaction {
-  constructor(canon, transactionID, mutatorArgs) {
+  constructor(canon, transactionID, mutator, mutatorArgs, patch) {
     this.transactionID = transactionID;
+    this.mutator = mutator;
     this.mutatorArgs = mutatorArgs;
     this.canon = canon;
+    this.patch = patch;
   }
 
   get(key) {
@@ -12,7 +14,22 @@ class ServerTransaction {
   }
 
   set(key, value) {
+    this.patch.push({
+      op: 'put',
+      key,
+      value,
+    });
+
     this.canon[key] = value;
+  }
+
+  delete(key) {
+    this.patch.push({
+      op: 'del',
+      key,
+    });
+
+    delete this.canon[key];
   }
 }
 
@@ -41,7 +58,6 @@ export class WebSocketServer {
       this.canon = (await this.state.storage.get('count')) || { count: 0 };
     });
     this.mutators = mutators;
-    console.log(this.mutators);
   }
 
   broadcast(data) {
@@ -70,29 +86,34 @@ export class WebSocketServer {
         );
 
         if (init) {
-          const initState = { canonState: this.canon };
+          const initState = { localState: this.canon };
           server.send(JSON.stringify(initState));
           return;
         }
+
+        const patch = [];
 
         const canonTx = new ServerTransaction(
           this.canon,
           transactionID,
           mutator,
-          mutatorArgs
+          mutatorArgs,
+          patch
         );
+
         this.mutators[mutator](canonTx, mutatorArgs);
-
-        const patch = {
-
-        }
 
         if (transactionID) {
           this.latestTransactionByClientId[clientID] = transactionID;
         }
 
-        const canonUpdate = { transactionID, canonState: this.canon }; // TODO fix these variable names
-        this.broadcast(JSON.stringify(canonUpdate));
+        const placeHolderUpdate = {
+          latestTransactionByClientId: this.latestTransactionByClientId,
+          snapshotID: 1,
+          patch
+        }
+
+        this.broadcast(JSON.stringify(placeHolderUpdate));
       });
 
       server.addEventListener('close', async cls => {

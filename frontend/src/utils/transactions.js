@@ -27,6 +27,6 @@ export class Transaction {
   }
 
   delete(key) {
-    this.localState.delete(key);
+    delete this.localState[key];
   }
 }
