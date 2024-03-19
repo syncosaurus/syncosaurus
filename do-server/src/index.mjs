@@ -118,6 +118,7 @@ export class WebSocketServer {
 
         if (init) {
           const initState = { canonState: this.canon };
+          server.clientID = clientID;
           server.send(JSON.stringify(initState));
           this.presence[clientID] = randomCoordinates();
           return;
@@ -139,8 +140,7 @@ export class WebSocketServer {
       });
 
       server.addEventListener('close', async cls => {
-        this.connections = this.connections.filter(ws => ws !== server);
-        server.close(cls.code, 'Durable Object is closing WebSocket');
+        delete this.presence[server.clientID];
       });
 
       // CF input gates protect against unwanted concurrrency here
