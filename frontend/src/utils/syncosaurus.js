@@ -1,5 +1,7 @@
 import { Transaction } from './transactions';
 
+const roomUriPrefix = 'ws://localhost:8787/websocket/room';
+
 export default class Syncosaurus {
   constructor(options) {
     //create client side KV stores
@@ -7,13 +9,15 @@ export default class Syncosaurus {
     this.txQueue = []; // create a tx
     this.userID = options.userID;
 
+    // need to implement logic to pass this in
+    this.roomID = options.roomID;
+
     // establish websocket connection with DO
-    this.socket = new WebSocket('ws://localhost:8787/websocket/room/baz');
+    this.socket = new WebSocket(`${roomUriPrefix}/${this.roomID}`);
 
     //When message received from websocket, update canon state and re-run pending mutations
     this.socket.addEventListener('message', event => {
       //parse websocket response
-      console.log(JSON.parse(event.data));
       const { latestTransactionByClientId, snapshotID, patch, canonState } =
         JSON.parse(event.data);
 
