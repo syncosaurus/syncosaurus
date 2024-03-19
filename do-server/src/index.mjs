@@ -54,6 +54,12 @@ export class WebSocketServer {
     this.latestTransactionByClientId = {};
     this.currentSnapshotID = 0;
     this.patch = [];
+    this.presence = {
+      // this is up to date information about who is currently connected / present
+      // TODO make sure this is populated on connect and clients are removed on close
+      a: { x: 75, y: 100 },
+      b: { x: 10, y: 30 },
+    };
 
     // `blockConcurrencyWhile()` ensures no requests are delivered until initialization completes.
     this.state.blockConcurrencyWhile(async () => {
@@ -67,6 +73,7 @@ export class WebSocketServer {
             snapshotID: this.currentSnapshotID,
             patch: this.patch,
             latestTransactionByClientId: this.latestTransactionByClientId,
+            presence: this.presence,
           };
 
           const json = JSON.stringify(currentSnapshot);
