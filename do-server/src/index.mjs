@@ -47,17 +47,36 @@ export default {
 // Durable Object
 export class WebSocketServer {
   constructor(state, env) {
+    this.mutators = mutators;
     this.state = state;
     this.env = env;
     this.connections = [];
     this.latestTransactionByClientId = {};
+    this.currentSnapshotID = 0;
+    this.patch = [];
 
     // `blockConcurrencyWhile()` ensures no requests are delivered until initialization completes.
     this.state.blockConcurrencyWhile(async () => {
-      console.log(await this.state.storage.get('count'));
       this.canon = (await this.state.storage.get('count')) || { count: 0 };
     });
-    this.mutators = mutators;
+
+    this.messageInterval = setInterval(
+      () =>
+        this.state.blockConcurrencyWhile(() => {
+          const currentSnapshot = {
+            snapshotID: this.currentSnapshotID,
+            patch: this.patch,
+            latestTransactionByClientId: this.latestTransactionByClientId,
+          };
+
+          const json = JSON.stringify(currentSnapshot);
+          this.broadcast(json);
+
+          this.currentSnapshotID += 1; // TODO convert to uulid?
+          this.patch = [];
+        }),
+      1000
+    );
   }
 
   broadcast(data) {
@@ -81,9 +100,8 @@ export class WebSocketServer {
       this.connections.push(server);
 
       server.addEventListener('message', event => {
-        const { transactionID, mutator, mutatorArgs, init, clientID } = JSON.parse(
-          event.data
-        );
+        const { transactionID, mutator, mutatorArgs, init, clientID } =
+          JSON.parse(event.data);
 
         if (init) {
           const initState = { canonState: this.canon };
@@ -91,14 +109,12 @@ export class WebSocketServer {
           return;
         }
 
-        const patch = [];
-
         const canonTx = new ServerTransaction(
           this.canon,
           transactionID,
           mutator,
           mutatorArgs,
-          patch
+          this.patch
         );
 
         this.mutators[mutator](canonTx, mutatorArgs);
@@ -106,14 +122,6 @@ export class WebSocketServer {
         if (transactionID) {
           this.latestTransactionByClientId[clientID] = transactionID;
         }
-
-        const placeHolderUpdate = {
-          latestTransactionByClientId: this.latestTransactionByClientId,
-          snapshotID: 1,
-          patch
-        }
-
-        this.broadcast(JSON.stringify(placeHolderUpdate));
       });
 
       server.addEventListener('close', async cls => {
