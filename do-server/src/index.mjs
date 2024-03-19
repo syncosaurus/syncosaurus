@@ -86,7 +86,7 @@ export class WebSocketServer {
         );
 
         if (init) {
-          const initState = { localState: this.canon };
+          const initState = { canonState: this.canon };
           server.send(JSON.stringify(initState));
           return;
         }

@@ -19,7 +19,6 @@ export class Transaction {
   set(key, value) {
     if (this.reason === 'initial') {
       this.localState[key] = value; //update local KV
-      console.log(this.notify);
       this.notify(key, { ...this.localState }); //alert subscribers of change
     } else if (this.reason === 'replay') {
       this.localState[key] = value; //update local KV

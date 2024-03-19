@@ -13,10 +13,10 @@ export default class Syncosaurus {
     //When message received from websocket, update canon state and re-run pending mutations
     this.socket.addEventListener('message', event => {
       //parse websocket response
-      const { latestTransactionByClientId, snapshotID, patch, localState } = JSON.parse(event.data);
+      const { latestTransactionByClientId, snapshotID, patch, canonState } = JSON.parse(event.data);
 
-      if (localState) {
-        this.localState = localState;
+      if (canonState) {
+        this.localState = canonState;
         this.notify('count', { ...this.localState });
         return;
       }
