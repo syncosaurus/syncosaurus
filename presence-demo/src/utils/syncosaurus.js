@@ -58,7 +58,7 @@ export default class Syncosaurus {
     });
 
     this.socket.addEventListener('open', () => {
-      this.socket.send(JSON.stringify({ init: true }));
+      this.socket.send(JSON.stringify({ init: true, clientID: this.userID }));
     });
 
     //The new mutators will be run with a new transaction instance with prefilled
