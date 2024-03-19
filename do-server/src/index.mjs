@@ -34,14 +34,30 @@ export class WebSocketServer {
     this.env = env;
     this.connections = [];
     this.latestTransactionByClientId = {};
+    this.currentSnapshotID = 0;
+    this.mutators = mutators;
 
     // `blockConcurrencyWhile()` ensures no requests are delivered until initialization completes.
     this.state.blockConcurrencyWhile(async () => {
-      console.log(await this.state.storage.get('count'));
       this.canon = (await this.state.storage.get('count')) || { count: 0 };
     });
-    this.mutators = mutators;
-    console.log(this.mutators);
+
+    this.messageInterval = setInterval(
+      () =>
+        this.state.blockConcurrencyWhile(() => {
+          const currentSnapshot = {
+            snapshotID: this.currentSnapshotID,
+            canon: this.canon,
+            latestTransactionByClientId: this.latestTransactionByClientId,
+          };
+
+          const json = JSON.stringify(currentSnapshot);
+          this.broadcast(json);
+
+          this.currentSnapshotID += 1; // TODO convert to uulid?
+        }),
+      1000
+    );
   }
 
   broadcast(data) {
@@ -65,9 +81,8 @@ export class WebSocketServer {
       this.connections.push(server);
 
       server.addEventListener('message', event => {
-        const { transactionID, mutator, mutatorArgs, init, clientID } = JSON.parse(
-          event.data
-        );
+        const { transactionID, mutator, mutatorArgs, init, clientID } =
+          JSON.parse(event.data);
 
         if (init) {
           const initState = { canonState: this.canon };
@@ -83,16 +98,9 @@ export class WebSocketServer {
         );
         this.mutators[mutator](canonTx, mutatorArgs);
 
-        const patch = {
-
-        }
-
         if (transactionID) {
           this.latestTransactionByClientId[clientID] = transactionID;
         }
-
-        const canonUpdate = { transactionID, canonState: this.canon }; // TODO fix these variable names
-        this.broadcast(JSON.stringify(canonUpdate));
       });
 
       server.addEventListener('close', async cls => {
