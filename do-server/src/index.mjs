@@ -33,6 +33,12 @@ class ServerTransaction {
   }
 }
 
+const randomCoordinates = () => {
+  const x = Math.random() * 1000;
+  const y = Math.random() * 1000;
+  return { x, y };
+};
+
 // Worker
 export default {
   async fetch(request, env) {
@@ -113,6 +119,7 @@ export class WebSocketServer {
         if (init) {
           const initState = { canonState: this.canon };
           server.send(JSON.stringify(initState));
+          this.presence[clientID] = randomCoordinates();
           return;
         }
 
