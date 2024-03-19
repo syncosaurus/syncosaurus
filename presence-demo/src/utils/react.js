@@ -27,4 +27,13 @@ function useSubscribe(syncosaurus, query, initial) {
   return data;
 }
 
-export { useSubscribe };
+function usePresence(syncosaurus) {
+  const [presence, setPresence] = useState(syncosaurus.presence);
+  useEffect(() => {
+    console.log('connecting Presence');
+    syncosaurus.subscribePresence(setPresence);
+  }, [syncosaurus]);
+  return presence || {};
+}
+
+export { useSubscribe, usePresence };

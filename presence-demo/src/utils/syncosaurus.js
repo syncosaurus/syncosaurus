@@ -6,6 +6,7 @@ export default class Syncosaurus {
     this.localState = {}; //create a KV store instance for the syncosaurus client that serves as UI display
     this.txQueue = []; // create a tx
     this.userID = options.userID;
+    this.presenceConnection;
 
     // establish websocket connection with DO
     this.socket = new WebSocket('ws://localhost:8787/websocket');
@@ -13,8 +14,13 @@ export default class Syncosaurus {
     //When message received from websocket, update canon state and re-run pending mutations
     this.socket.addEventListener('message', event => {
       //parse websocket response
-      const { latestTransactionByClientId, snapshotID, patch, canonState } =
-        JSON.parse(event.data);
+      const {
+        latestTransactionByClientId,
+        snapshotID,
+        patch,
+        canonState,
+        presence,
+      } = JSON.parse(event.data);
 
       if (canonState) {
         this.localState = canonState;
@@ -45,6 +51,10 @@ export default class Syncosaurus {
 
       //update
       this.notify('count', { ...this.localState });
+
+      if (presence && this.presenceConnection) {
+        this.presenceConnection(presence);
+      }
     });
 
     this.socket.addEventListener('open', () => {
@@ -119,5 +129,9 @@ export default class Syncosaurus {
         callback(newData);
       });
     }
+  }
+
+  subscribePresence(callback) {
+    this.presenceConnection = callback;
   }
 }
