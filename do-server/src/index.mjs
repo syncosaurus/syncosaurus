@@ -1,10 +1,12 @@
 import { mutators } from '../../frontend/src/utils/mutators.js';
 
 class ServerTransaction {
-  constructor(canon, transactionID, mutatorArgs) {
+  constructor(canon, transactionID, mutator, mutatorArgs, patch) {
     this.transactionID = transactionID;
+    this.mutator = mutator;
     this.mutatorArgs = mutatorArgs;
     this.canon = canon;
+    this.patch = patch;
   }
 
   get(key) {
@@ -13,6 +15,21 @@ class ServerTransaction {
 
   set(key, value) {
     this.canon[key] = value;
+
+    this.patch.push({
+      op: 'put',
+      key,
+      value,
+    });
+  }
+
+  delete(key) {
+    delete this.canon[key];
+
+    this.patch.push({
+      op: 'del',
+      key,
+    });
   }
 }
 
@@ -90,12 +107,16 @@ export class WebSocketServer {
           return;
         }
 
+        const patch = [];
+
         const canonTx = new ServerTransaction(
           this.canon,
           transactionID,
           mutator,
-          mutatorArgs
+          mutatorArgs,
+          patch
         );
+
         this.mutators[mutator](canonTx, mutatorArgs);
 
         if (transactionID) {
