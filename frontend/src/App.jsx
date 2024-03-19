@@ -2,10 +2,22 @@ import './App.css';
 import { mutators } from './utils/mutators';
 import Syncosaurus from './utils/syncosaurus.js';
 import { useSubscribe } from './utils/react.js';
+import { v4 as uuidv4 } from 'uuid';
+
+
+// TODO MOVE THIS ELSEWHERE
+class User {
+  constructor() {
+    this.id = uuidv4();
+  }
+}
+
+const user = new User();
 
 //create an instance of the syncosaurus class, known as a client
 const r = new Syncosaurus({
   mutators,
+  userID: user.id,
 });
 
 const incrementKey = 'count';

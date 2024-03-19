@@ -4,8 +4,8 @@ export default class Syncosaurus {
   constructor(options) {
     //create client side KV stores
     this.localState = {}; //create a KV store instance for the syncosaurus client that serves as UI display
-    this.canonState = {}; //create a KV store instance for the syncosaurus client that serves as source of truth after server runs
     this.txQueue = []; // create a tx
+    this.userID = options.userID;
 
     // establish websocket connection with DO
     this.socket = new WebSocket('ws://localhost:8787/websocket');
@@ -13,21 +13,30 @@ export default class Syncosaurus {
     //When message received from websocket, update canon state and re-run pending mutations
     this.socket.addEventListener('message', event => {
       //parse websocket response
-      const response = JSON.parse(event.data);
+      const { latestTransactionByClientId, snapshotID, patch, canonState } = JSON.parse(event.data);
 
-      //remove pending event from queue
+      if (canonState) {
+        this.localState = canonState;
+        this.notify('count', { ...this.localState });
+        return;
+      }
+
+      //remove pending events from queue if they occured before latestTransactionByClientId
       this.txQueue = this.txQueue.filter(
-        tx => tx.id !== response.transactionID
+        tx => tx.id > latestTransactionByClientId[this.userID]
       );
 
-      //update cannon and cannon clone to be the result from the server
-      for (let key in response.canonState) {
-        // replace canonCloneState with canonState
-        this.canonState[key] = response.canonState[key];
-        this.localState[key] = response.canonState[key]; //reset canonClone to be same as canon
-      }
+      //iterate through patch updates and run them on local state
+      patch.forEach(operation => {
+        if (operation.op === "put") {
+          this.localState[operation.key] = operation.value;
+        } else if (operation.op === "del") {
+          delete this.localState[operation.key];
+        } else if (operation.op === "clear") {
+          this.localState = {};
+        }
+      });
       console.log('--------------New Response---------------------');
-      console.log('canon state', this.canonState);
       console.log('local state', this.localState);
 
       //re-run any pending mutations on top of canonClone to produce the new localState
@@ -63,9 +72,9 @@ export default class Syncosaurus {
             transactionID: transaction.id,
             mutator: mutator,
             mutatorArgs: args,
+            clientID: this.userID,
           })
         );
-        console.log('local state', this.localState);
       };
 
       this.replayMutate[mutator] = args => {
@@ -73,17 +82,10 @@ export default class Syncosaurus {
         mutators[mutator](transaction, args);
       };
     }
-    /*
-
-
-      }
-
-    */
 
     this.subscriptions = {};
   }
-  // query | tx => tx.get('count') but for now i'm using 'count'
-  // callback | newData => {setData(newData)});
+
   subscribe(query, callback) {
     if (!this.subscriptions[query]) {
       this.subscriptions[query] = [];

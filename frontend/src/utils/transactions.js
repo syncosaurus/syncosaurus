@@ -1,8 +1,10 @@
-import { v4 as uuidv4 } from 'uuid';
+import { monotonicFactory } from 'ulidx';
+
+const ulid = monotonicFactory();
 
 export class Transaction {
   constructor(localState, notify, mutator, args, reason) {
-    this.id = String(Date.now()) + '_' + uuidv4();
+    this.id = ulid(Date.now());
     this.localState = localState;
     this.notify = notify;
     this.mutator = mutator;
@@ -24,6 +26,6 @@ export class Transaction {
   }
 
   delete(key) {
-    this.localState.delete(key);
+    delete this.localState[key];
   }
 }

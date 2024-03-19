@@ -1,10 +1,12 @@
 import { mutators } from '../../frontend/src/utils/mutators.js';
 
 class ServerTransaction {
-  constructor(canon, transactionID, mutatorArgs) {
+  constructor(canon, transactionID, mutator, mutatorArgs, patch) {
     this.transactionID = transactionID;
+    this.mutator = mutator;
     this.mutatorArgs = mutatorArgs;
     this.canon = canon;
+    this.patch = patch;
   }
 
   get(key) {
@@ -13,6 +15,21 @@ class ServerTransaction {
 
   set(key, value) {
     this.canon[key] = value;
+
+    this.patch.push({
+      op: 'put',
+      key,
+      value,
+    });
+  }
+
+  delete(key) {
+    delete this.canon[key];
+
+    this.patch.push({
+      op: 'del',
+      key,
+    });
   }
 }
 
@@ -33,6 +50,7 @@ export class WebSocketServer {
     this.state = state;
     this.env = env;
     this.connections = [];
+    this.latestTransactionByClientId = {};
 
     // `blockConcurrencyWhile()` ensures no requests are delivered until initialization completes.
     this.state.blockConcurrencyWhile(async () => {
@@ -40,7 +58,6 @@ export class WebSocketServer {
       this.canon = (await this.state.storage.get('count')) || { count: 0 };
     });
     this.mutators = mutators;
-    console.log(this.mutators);
   }
 
   broadcast(data) {
@@ -64,7 +81,7 @@ export class WebSocketServer {
       this.connections.push(server);
 
       server.addEventListener('message', event => {
-        const { transactionID, mutator, mutatorArgs, init } = JSON.parse(
+        const { transactionID, mutator, mutatorArgs, init, clientID } = JSON.parse(
           event.data
         );
 
@@ -74,15 +91,29 @@ export class WebSocketServer {
           return;
         }
 
+        const patch = [];
+
         const canonTx = new ServerTransaction(
           this.canon,
           transactionID,
           mutator,
-          mutatorArgs
+          mutatorArgs,
+          patch
         );
+
         this.mutators[mutator](canonTx, mutatorArgs);
-        const canonUpdate = { transactionID, canonState: this.canon }; // TODO fix these variable names
-        this.broadcast(JSON.stringify(canonUpdate));
+
+        if (transactionID) {
+          this.latestTransactionByClientId[clientID] = transactionID;
+        }
+
+        const placeHolderUpdate = {
+          latestTransactionByClientId: this.latestTransactionByClientId,
+          snapshotID: 1,
+          patch
+        }
+
+        this.broadcast(JSON.stringify(placeHolderUpdate));
       });
 
       server.addEventListener('close', async cls => {
