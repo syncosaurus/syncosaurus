@@ -8,7 +8,7 @@ export default class Syncosaurus {
     this.userID = options.userID;
 
     // establish websocket connection with DO
-    this.socket = new WebSocket('ws://localhost:8787/websocket');
+    this.socket = new WebSocket('ws://localhost:8787/websocket/room/baz');
 
     //When message received from websocket, update canon state and re-run pending mutations
     this.socket.addEventListener('message', event => {
