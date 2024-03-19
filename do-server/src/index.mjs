@@ -14,22 +14,22 @@ class ServerTransaction {
   }
 
   set(key, value) {
+    this.canon[key] = value;
+
     this.patch.push({
       op: 'put',
       key,
       value,
     });
-
-    this.canon[key] = value;
   }
 
   delete(key) {
+    delete this.canon[key];
+
     this.patch.push({
       op: 'del',
       key,
     });
-
-    delete this.canon[key];
   }
 }
 
