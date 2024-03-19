@@ -6,6 +6,7 @@ export default class Syncosaurus {
     this.localState = {}; //create a KV store instance for the syncosaurus client that serves as UI display
     this.canonState = {}; //create a KV store instance for the syncosaurus client that serves as source of truth after server runs
     this.txQueue = []; // create a tx
+    this.userID = options.userID;
 
     // establish websocket connection with DO
     this.socket = new WebSocket('ws://localhost:8787/websocket');
@@ -63,6 +64,7 @@ export default class Syncosaurus {
             transactionID: transaction.id,
             mutator: mutator,
             mutatorArgs: args,
+            clientID: this.userID,
           })
         );
         console.log('local state', this.localState);
@@ -73,17 +75,10 @@ export default class Syncosaurus {
         mutators[mutator](transaction, args);
       };
     }
-    /*
-
-
-      }
-
-    */
 
     this.subscriptions = {};
   }
-  // query | tx => tx.get('count') but for now i'm using 'count'
-  // callback | newData => {setData(newData)});
+
   subscribe(query, callback) {
     if (!this.subscriptions[query]) {
       this.subscriptions[query] = [];

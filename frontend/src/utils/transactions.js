@@ -1,8 +1,10 @@
-import { v4 as uuidv4 } from 'uuid';
+import { monotonicFactory } from 'ulidx';
+
+const ulid = monotonicFactory();
 
 export class Transaction {
   constructor(localState, notify, mutator, args, reason) {
-    this.id = String(Date.now()) + '_' + uuidv4();
+    this.id = ulid(Date.now());
     this.localState = localState;
     this.notify = notify;
     this.mutator = mutator;
@@ -17,6 +19,7 @@ export class Transaction {
   set(key, value) {
     if (this.reason === 'initial') {
       this.localState[key] = value; //update local KV
+      console.log(this.notify);
       this.notify(key, { ...this.localState }); //alert subscribers of change
     } else if (this.reason === 'replay') {
       this.localState[key] = value; //update local KV
