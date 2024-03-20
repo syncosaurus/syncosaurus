@@ -166,7 +166,23 @@ function Rectangle({ shape, onShapePointerDown }) {
   );
 }
 
-const COLORS = ['#DC2626', '#D97706', '#059669', '#7C3AED', '#DB2777'];
+const COLORS = [
+  '#FF5733',
+  '#FFC300',
+  '#FFDC00',
+  '#D2FF00',
+  '#66FF00',
+  '#00FF66',
+  '#00FFD2',
+  '#0095FF',
+  '#0044FF',
+  '#002BFF',
+  '#5600FF',
+  '#B200FF',
+  '#FF00E6',
+  '#FF0052',
+  '#FF0033',
+];
 
 function getRandomInt(max) {
   return Math.floor(Math.random() * max);
@@ -228,11 +244,8 @@ function App() {
     const x = Math.floor(e.clientX);
     const y = Math.floor(e.clientY);
 
-    const prevProps = shapes[selectedShapeId];
-
-    const newShape = { ...prevProps, x, y };
-    const prevShapes = shapes;
-    const newShapes = { ...prevShapes };
+    const newShape = { ...shapes[selectedShapeId], x, y };
+    const newShapes = { ...shapes };
     newShapes[selectedShapeId] = newShape;
     setShapes(newShapes);
   };
