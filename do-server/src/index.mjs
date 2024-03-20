@@ -140,6 +140,7 @@ export class WebSocketServer {
       });
 
       server.addEventListener('close', async cls => {
+        this.connections = this.connections.filter(ws => ws !== server);
         delete this.presence[server.clientID];
       });
 
