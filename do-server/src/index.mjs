@@ -1,6 +1,6 @@
 import { mutators } from '../../frontend/src/utils/mutators.js';
 
-const MSG_FREQUENCY = 16;
+const MSG_FREQUENCY = 500;
 class ServerTransaction {
   constructor(canon, transactionID, mutator, mutatorArgs, patch) {
     this.transactionID = transactionID;
