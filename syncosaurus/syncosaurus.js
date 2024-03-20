@@ -1,4 +1,4 @@
-import { Transaction, QueryTransaction } from './transactions';
+import { WriteTransaction, ReadTransaction } from './transactions';
 
 export default class Syncosaurus {
   constructor(options) {
@@ -75,7 +75,7 @@ export default class Syncosaurus {
     for (let mutator in mutators) {
       this.mutate[mutator] = args => {
         let subKeys = {};
-        const transaction = new Transaction(
+        const transaction = new WriteTransaction(
           this.localState,
           mutator,
           args,
@@ -98,7 +98,7 @@ export default class Syncosaurus {
 
       this.replayMutate[mutator] = args => {
         let subKeys = {};
-        const transaction = new Transaction(
+        const transaction = new WriteTransaction(
           this.localState,
           mutator,
           args,
@@ -113,7 +113,7 @@ export default class Syncosaurus {
 
   subscribe(query, callback) {
     let subKeys = {};
-    let queryTransaction = new QueryTransaction(this.localState, subKeys);
+    let queryTransaction = new ReadTransaction(this.localState, subKeys);
     let queryResult = query(queryTransaction);
     let subscriptionInfo = {
       keys: subKeys,
@@ -154,7 +154,7 @@ export default class Syncosaurus {
           !executedSubscriptions[subIdx]
         ) {
           let newSubKeys = {};
-          let queryTransaction = new QueryTransaction(
+          let queryTransaction = new ReadTransaction(
             this.localState,
             newSubKeys
           );
