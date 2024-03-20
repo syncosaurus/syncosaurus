@@ -1,10 +1,10 @@
 import './App.css';
-import { mutators } from '../../frontend/src/utils/mutators';
+import { mutators } from '../../../syncosaurus/mutators.js';
 import {
   usePresence,
   useUpdateMyPresence,
-} from '../../frontend/src/utils/react.js';
-import Syncosaurus from '../../frontend/src/utils/syncosaurus.js';
+} from '../../../syncosaurus/hooks.js';
+import Syncosaurus from '../../../syncosaurus/syncosaurus.js';
 import { v4 as uuidv4 } from 'uuid';
 
 // TODO MOVE THIS ELSEWHERE

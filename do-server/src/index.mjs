@@ -1,4 +1,4 @@
-import { mutators } from '../../frontend/src/utils/mutators.js';
+import { mutators } from '../../syncosaurus/mutators.js';
 
 const MSG_FREQUENCY = 500;
 class ServerTransaction {
