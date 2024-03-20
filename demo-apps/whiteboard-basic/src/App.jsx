@@ -142,20 +142,8 @@ function Canvas() {
 }
 
 function Rectangle({ shape, onShapePointerDown }) {
-  const [props, setProps] = useState(shape);
   const [selectedByMe, setSeletedByMe] = useState(false);
-
-  const { id, x, y, fill } = props;
-
-  // const selectedByMe = useSelf(me => me.presence.selectedShape === id);
-  // const selectedByOthers = useOthers(others =>
-  //   others.some(other => other.presence.selectedShape === id)
-  // );
-  // const selectionColor = selectedByMe
-  //   ? 'blue'
-  //   : selectedByOthers
-  //   ? 'green'
-  //   : 'transparent';
+  const { id, x, y, fill } = shape;
 
   const handleShapePointerDown = e => {
     setSeletedByMe(true);
@@ -198,48 +186,69 @@ function getRandomColor() {
 //   );
 // }
 
-const mockStorage = [
-  {
+const mockShapes = {
+  1: {
     id: '1',
     x: getRandomInt(500),
     y: getRandomInt(500),
     fill: getRandomColor(),
   },
-  {
+  2: {
     id: '2',
     x: getRandomInt(500),
     y: getRandomInt(500),
     fill: getRandomColor(),
   },
-  {
+  3: {
     id: '3',
     x: getRandomInt(500),
     y: getRandomInt(500),
     fill: getRandomColor(),
   },
-];
+};
 
 function App() {
-  const [selectedShape, setSelectedShape] = useState(null);
+  const [selectedShapeId, setSelectedShapeId] = useState(null);
+  const [shapes, setShapes] = useState(mockShapes);
 
   const handleShapePointerDown = (e, id) => {
-    console.log('clicked rectangle:', id);
-    setSelectedShape(id);
+    e.preventDefault(); // These e.preventDefaults stop text from being highlighted when the user clicks and holds/drags a rectangle
+    setSelectedShapeId(id);
   };
 
   const handleCanvasPointerUp = e => {
-    console.log('pointer up event');
-    setSelectedShape(null);
+    e.preventDefault();
+    setSelectedShapeId(null);
+  };
+
+  const handleCanvasPointerMove = e => {
+    if (!selectedShapeId) return;
+    e.preventDefault();
+
+    const x = Math.floor(e.clientX);
+    const y = Math.floor(e.clientY);
+
+    const prevProps = shapes[selectedShapeId];
+
+    const newShape = { ...prevProps, x, y };
+    const prevShapes = shapes;
+    const newShapes = { ...prevShapes };
+    newShapes[selectedShapeId] = newShape;
+    setShapes(newShapes);
   };
 
   return (
     <>
-      <div id="canvas" onPointerUp={handleCanvasPointerUp}>
-        <p>Selected shape: {selectedShape}</p>
-        {mockStorage.map(rec => (
+      <div
+        className="canvas"
+        onPointerUp={handleCanvasPointerUp}
+        onPointerMove={handleCanvasPointerMove}
+      >
+        <p>Selected shape: {selectedShapeId}</p>
+        {Object.keys(shapes).map(id => (
           <Rectangle
-            key={rec.id}
-            shape={{ ...rec }}
+            key={id}
+            shape={shapes[id]}
             onShapePointerDown={handleShapePointerDown}
           />
         ))}
