@@ -34,12 +34,6 @@ class ServerTransaction {
   }
 }
 
-const randomCoordinates = () => {
-  const x = Math.random() * 1000;
-  const y = Math.random() * 1000;
-  return { x, y };
-};
-
 // Worker
 export default {
   async fetch(request, env) {
