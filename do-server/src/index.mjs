@@ -1,5 +1,6 @@
 import { mutators } from '../../frontend/src/utils/mutators.js';
 
+const MSG_FREQUENCY = 16;
 class ServerTransaction {
   constructor(canon, transactionID, mutator, mutatorArgs, patch) {
     this.transactionID = transactionID;
@@ -60,12 +61,7 @@ export class WebSocketServer {
     this.latestTransactionByClientId = {};
     this.currentSnapshotID = 0;
     this.patch = [];
-    this.presence = {
-      // this is up to date information about who is currently connected / present
-      // TODO make sure this is populated on connect and clients are removed on close
-      a: { x: 75, y: 100 },
-      b: { x: 10, y: 30 },
-    };
+    this.presence = {};
 
     // `blockConcurrencyWhile()` ensures no requests are delivered until initialization completes.
     this.state.blockConcurrencyWhile(async () => {
@@ -88,7 +84,7 @@ export class WebSocketServer {
           this.currentSnapshotID += 1; // TODO convert to uulid?
           this.patch = [];
         }),
-      1000
+      MSG_FREQUENCY
     );
   }
 
@@ -113,14 +109,24 @@ export class WebSocketServer {
       this.connections.push(server);
 
       server.addEventListener('message', event => {
-        const { transactionID, mutator, mutatorArgs, init, clientID } =
-          JSON.parse(event.data);
+        const {
+          transactionID,
+          mutator,
+          mutatorArgs,
+          init,
+          clientID,
+          presence,
+        } = JSON.parse(event.data);
 
         if (init) {
           const initState = { canonState: this.canon };
           server.clientID = clientID;
           server.send(JSON.stringify(initState));
-          this.presence[clientID] = randomCoordinates();
+          return;
+        }
+
+        if (presence) {
+          this.presence[clientID] = presence;
           return;
         }
 
