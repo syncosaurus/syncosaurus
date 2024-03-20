@@ -6,6 +6,7 @@ export default class Syncosaurus {
     this.localState = {}; //create a KV store instance for the syncosaurus client that serves as UI display
     this.txQueue = []; // create a tx
     this.userID = options.userID;
+    this.presenceConnection;
 
     // establish websocket connection with DO
     this.socket = new WebSocket('ws://localhost:8787/websocket');
@@ -13,9 +14,13 @@ export default class Syncosaurus {
     //When message received from websocket, update canon state and re-run pending mutations
     this.socket.addEventListener('message', event => {
       //parse websocket response
-      console.log(JSON.parse(event.data));
-      const { latestTransactionByClientId, snapshotID, patch, canonState } =
-        JSON.parse(event.data);
+      const {
+        latestTransactionByClientId,
+        // TODO add in snapshotID
+        patch,
+        canonState,
+        presence,
+      } = JSON.parse(event.data);
 
       if (canonState) {
         this.localState = canonState;
@@ -38,23 +43,23 @@ export default class Syncosaurus {
           this.localState = {};
         }
       });
-      console.log('--------------New Response---------------------');
-      console.log('local state', this.localState);
 
       //re-run any pending mutations on top of canonClone to produce the new localState
       this.txQueue.forEach(tx => {
         this.replayMutate[tx.mutator](tx.mutatorArgs);
       });
-      console.log('--------------After Mutation Replay---------------------');
-      console.log('local state', this.localState);
 
       //update
       this.notify('count', { ...this.localState });
+
+      if (presence) {
+        // delete presence[this.userID]; // TODO uncomment this line
+        this.presenceConnection(presence);
+      }
     });
 
     this.socket.addEventListener('open', () => {
-      console.log('connection opened');
-      this.socket.send(JSON.stringify({ init: true }));
+      this.socket.send(JSON.stringify({ init: true, clientID: this.userID }));
     });
 
     //The new mutators will be run with a new transaction instance with prefilled
@@ -125,5 +130,15 @@ export default class Syncosaurus {
         callback(newData);
       });
     }
+  }
+
+  subscribePresence(callback) {
+    this.presenceConnection = callback;
+  }
+
+  updateMyPresence(newData) {
+    const payload = { presence: newData, clientID: this.userID };
+    const msg = JSON.stringify(payload);
+    this.socket.send(msg);
   }
 }
