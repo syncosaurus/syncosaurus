@@ -1,4 +1,4 @@
-import { Transaction } from './transactions';
+import { Transaction, QueryTransaction } from './transactions';
 
 export default class Syncosaurus {
   constructor(options) {
@@ -13,13 +13,12 @@ export default class Syncosaurus {
     //When message received from websocket, update canon state and re-run pending mutations
     this.socket.addEventListener('message', event => {
       //parse websocket response
-      console.log(JSON.parse(event.data));
       const { latestTransactionByClientId, snapshotID, patch, canonState } =
         JSON.parse(event.data);
 
       if (canonState) {
         this.localState = canonState;
-        this.notify('count', { ...this.localState });
+        this.notifyList(Object.keys(this.localState));
         return;
       }
 
@@ -28,6 +27,7 @@ export default class Syncosaurus {
         tx => tx.id > latestTransactionByClientId[this.userID]
       );
 
+      let notificationKeyArray = [];
       //iterate through patch updates and run them on local state
       patch.forEach(operation => {
         if (operation.op === 'put') {
@@ -37,19 +37,17 @@ export default class Syncosaurus {
         } else if (operation.op === 'clear') {
           this.localState = {};
         }
+
+        notificationKeyArray.push(operation.key);
       });
-      console.log('--------------New Response---------------------');
-      console.log('local state', this.localState);
 
       //re-run any pending mutations on top of canonClone to produce the new localState
       this.txQueue.forEach(tx => {
         this.replayMutate[tx.mutator](tx.mutatorArgs);
       });
-      console.log('--------------After Mutation Replay---------------------');
-      console.log('local state', this.localState);
 
       //update
-      this.notify('count', { ...this.localState });
+      this.notifyList(notificationKeyArray);
     });
 
     this.socket.addEventListener('open', () => {
@@ -65,15 +63,17 @@ export default class Syncosaurus {
     this.replayMutate = {};
     for (let mutator in mutators) {
       this.mutate[mutator] = args => {
+        let subKeys = {};
         const transaction = new Transaction(
           this.localState,
-          this.notify.bind(this),
           mutator,
           args,
-          'initial'
+          subKeys
         );
         this.txQueue.push(transaction);
         mutators[mutator](transaction, args); //execute mutator on local state
+        this.notifyList(Object.keys(subKeys)); //notify subscribers
+
         //send transaction to the server if this is the first time and not a replay
         this.socket.send(
           JSON.stringify({
@@ -86,44 +86,80 @@ export default class Syncosaurus {
       };
 
       this.replayMutate[mutator] = args => {
+        let subKeys = {};
         const transaction = new Transaction(
           this.localState,
-          this.notify.bind(this),
           mutator,
           args,
-          'replay'
+          subKeys
         );
         mutators[mutator](transaction, args);
       };
     }
 
-    this.subscriptions = {};
+    this.subscriptions = [];
   }
 
   subscribe(query, callback) {
-    if (!this.subscriptions[query]) {
-      this.subscriptions[query] = [];
-    }
-    this.subscriptions[query].push(callback);
-    // Return a function to unsubscribe from the query
+    let subKeys = {};
+    let queryTransaction = new QueryTransaction(this.localState, subKeys);
+    let queryResult = query(queryTransaction);
+    let subscriptionInfo = {
+      keys: subKeys,
+      query: query,
+      prevResult: queryResult,
+      callback
+    };
+
+    this.subscriptions.push(subscriptionInfo);
+
+    // Return a function to unsubscribe from the query when component is unmounted
     return () => {
-      this.unsubscribe(query, callback);
+      this.unsubscribe(query);
     };
   }
 
-  unsubscribe(query, callback) {
-    if (this.subscriptions[query]) {
-      this.subscriptions[query] = this.subscriptions[query].filter(
-        cb => cb !== callback
-      );
-    }
+  //remove subscription with matching query from the array of subscriptions 
+  unsubscribe(query) {
+    this.subscriptions = this.subscriptions.filter((subscription) => {
+      //return false if it is the subscription we want to remove, otherwise true
+      return !(subscription.query === query);
+    });
   }
 
-  notify(query, newData) {
-    if (this.subscriptions[query]) {
-      this.subscriptions[query].forEach(callback => {
-        callback(newData);
-      });
-    }
+  //takes a list of keys and notifies their subscribers
+  notifyList(notificationKeys) {
+    let executedSubscriptions = {};
+
+    //iterate through each key updated and if there is a subscription that relies on it, notify the subscriber so
+    //they can rerender the component 
+    notificationKeys.forEach((notificationKey) => {
+      this.subscriptions.forEach((subscription, subIdx) => {
+        //If the current key is in the subscription "watch list" called `keys` and the subscription has not already been run,
+        //re-run the query
+
+        if (subscription.keys[notificationKey] && !executedSubscriptions[subIdx]) {
+          let newSubKeys = {};
+          let queryTransaction = new QueryTransaction(this.localState, newSubKeys);
+          let queryResult = subscription.query(queryTransaction, newSubKeys);
+          //If the query results have changed, invoke the callback (setState react function) 
+          //for the subscriber, otherwise don't
+          if (typeof queryResult === "object" &&
+            !(JSON.stringify(queryResult) === JSON.stringify(subscription.prevResult))) {
+            subscription.prevResult = queryResult;
+            subscription.callback(queryResult);
+          } else if (!(queryResult === subscription.prevResult)) {
+            subscription.prevResult = queryResult;
+            subscription.callback(queryResult);
+          }
+
+          //Reset keys in the case of `scan` method which can change keys that a subscriber pays attention to
+          subscription.keys = newSubKeys;
+
+          //add the exectued subscription index to the object so we don't notify the subscriber twice
+          executedSubscriptions[subIdx] = true;
+        }
+      })
+    })
   }
 }
