@@ -144,7 +144,6 @@ function Canvas() {
 function Rectangle({ shape, onShapePointerDown }) {
   const [props, setProps] = useState(shape);
   const [selectedByMe, setSeletedByMe] = useState(false);
-  const [selectedByOthers, setSeletedByOthers] = useState(false);
 
   const { id, x, y, fill } = props;
 
@@ -152,23 +151,30 @@ function Rectangle({ shape, onShapePointerDown }) {
   // const selectedByOthers = useOthers(others =>
   //   others.some(other => other.presence.selectedShape === id)
   // );
-  const selectionColor = selectedByMe
-    ? 'blue'
-    : selectedByOthers
-    ? 'green'
-    : 'transparent';
+  // const selectionColor = selectedByMe
+  //   ? 'blue'
+  //   : selectedByOthers
+  //   ? 'green'
+  //   : 'transparent';
+
+  const handleShapePointerDown = e => {
+    setSeletedByMe(true);
+    onShapePointerDown(e, id);
+  };
 
   return (
     <div
-      onPointerDown={e => onShapePointerDown(e, id)}
+      onPointerDown={handleShapePointerDown}
       className={'rectangle'}
       style={{
         transform: `translate(${x}px, ${y}px)`,
-        transition: !selectedByMe ? 'transform 120ms linear' : 'none',
+        transition: !selectedByMe ? 'transform 120ms linear' : 'none', // this is a fancy css trick to smooth other user position updates I think
         backgroundColor: fill || '#CCC',
-        borderColor: selectionColor,
+        borderColor: 'transparent',
       }}
-    />
+    >
+      {id}
+    </div>
   );
 }
 
@@ -182,51 +188,62 @@ function getRandomColor() {
   return COLORS[getRandomInt(COLORS.length)];
 }
 
-function Loading() {
-  return (
-    <div className={'container'}>
-      <div className={'loading'}>
-        <img src="https://liveblocks.io/loading.svg" alt="Loading" />
-      </div>
-    </div>
-  );
-}
+// function Loading() {
+//   return (
+//     <div className={'container'}>
+//       <div className={'loading'}>
+//         <img src="https://liveblocks.io/loading.svg" alt="Loading" />
+//       </div>
+//     </div>
+//   );
+// }
+
+const mockStorage = [
+  {
+    id: '1',
+    x: getRandomInt(500),
+    y: getRandomInt(500),
+    fill: getRandomColor(),
+  },
+  {
+    id: '2',
+    x: getRandomInt(500),
+    y: getRandomInt(500),
+    fill: getRandomColor(),
+  },
+  {
+    id: '3',
+    x: getRandomInt(500),
+    y: getRandomInt(500),
+    fill: getRandomColor(),
+  },
+];
 
 function App() {
+  const [selectedShape, setSelectedShape] = useState(null);
+
   const handleShapePointerDown = (e, id) => {
     console.log('clicked rectangle:', id);
+    setSelectedShape(id);
   };
 
-  const mockStorage = [
-    {
-      id: '1',
-      x: getRandomInt(500),
-      y: getRandomInt(500),
-      fill: getRandomColor(),
-    },
-    {
-      id: '2',
-      x: getRandomInt(500),
-      y: getRandomInt(500),
-      fill: getRandomColor(),
-    },
-    {
-      id: '3',
-      x: getRandomInt(500),
-      y: getRandomInt(500),
-      fill: getRandomColor(),
-    },
-  ];
+  const handleCanvasPointerUp = e => {
+    console.log('pointer up event');
+    setSelectedShape(null);
+  };
 
   return (
     <>
-      {mockStorage.map(rec => (
-        <Rectangle
-          key={rec.id}
-          shape={{ ...rec }}
-          onShapePointerDown={handleShapePointerDown}
-        />
-      ))}
+      <div id="canvas" onPointerUp={handleCanvasPointerUp}>
+        <p>Selected shape: {selectedShape}</p>
+        {mockStorage.map(rec => (
+          <Rectangle
+            key={rec.id}
+            shape={{ ...rec }}
+            onShapePointerDown={handleShapePointerDown}
+          />
+        ))}
+      </div>
     </>
   );
 }
