@@ -1,0 +1,22 @@
+{
+  "name": "syncosaurus",
+  "version": "1.0.0",
+  "description": "A framework for adding realtime, collaborative features to React applications.",
+  "main": "syncosaurus.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/syncosaurus/syncosaurus.git"
+  },
+  "author": "Syncosaurus",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/syncosaurus/syncosaurus/issues"
+  },
+  "homepage": "https://github.com/syncosaurus/syncosaurus#readme",
+  "dependencies": {
+    "ulidx": "^2.3.0"
+  }
+}

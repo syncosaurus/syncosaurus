@@ -1,9 +1,8 @@
 import './App.css';
-import { mutators } from './utils/mutators';
-import Syncosaurus from './utils/syncosaurus.js';
-import { useSubscribe } from './utils/react.js';
+import { mutators } from '../../../syncosaurus/mutators.js';
+import Syncosaurus from '../../../syncosaurus/syncosaurus.js';
+import { useSubscribe } from '../../../syncosaurus/hooks.js';
 import { v4 as uuidv4 } from 'uuid';
-
 
 // TODO MOVE THIS ELSEWHERE
 class User {
@@ -15,7 +14,7 @@ class User {
 const user = new User();
 
 //create an instance of the syncosaurus class, known as a client
-const r = new Syncosaurus({
+const synco = new Syncosaurus({
   mutators,
   userID: user.id,
 });
@@ -24,18 +23,18 @@ const incrementKey = 'count';
 
 function App() {
   const handleIncrementClick = () => {
-    r.mutate.increment({ key: incrementKey, delta: 1 });
+    synco.mutate.increment({ key: incrementKey, delta: 1 });
   };
 
   const handleDecrementClick = () => {
-    r.mutate.decrement({ key: incrementKey, delta: 1 });
+    synco.mutate.decrement({ key: incrementKey, delta: 1 });
   };
 
-  const cache = useSubscribe(r, incrementKey, { [incrementKey]: 0 });
+  const count = useSubscribe(synco, tx => tx.get(incrementKey), 0);
 
   return (
     <div>
-      <div>{cache[incrementKey]}</div>
+      <div>{count}</div>
       <button onClick={handleIncrementClick}>GROW</button>
       <button onClick={handleDecrementClick}>SHRINK</button>
     </div>
