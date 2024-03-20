@@ -54,7 +54,9 @@ export default class Syncosaurus {
 
       //update
       this.notifyList(notificationKeyArray);
-      if (presence) {
+      // This checks if the presenceConnection exists on the app
+      // If the client app doesn't ever use the usePresence hook, this block is always ignored
+      if (presence && this.presenceConnection) {
         delete presence[this.userID];
         this.presenceConnection(presence);
       }
@@ -117,7 +119,7 @@ export default class Syncosaurus {
       keys: subKeys,
       query: query,
       prevResult: queryResult,
-      callback
+      callback,
     };
 
     this.subscriptions.push(subscriptionInfo);
@@ -128,9 +130,9 @@ export default class Syncosaurus {
     };
   }
 
-  //remove subscription with matching query from the array of subscriptions 
+  //remove subscription with matching query from the array of subscriptions
   unsubscribe(query) {
-    this.subscriptions = this.subscriptions.filter((subscription) => {
+    this.subscriptions = this.subscriptions.filter(subscription => {
       //return false if it is the subscription we want to remove, otherwise true
       return !(subscription.query === query);
     });
@@ -141,20 +143,31 @@ export default class Syncosaurus {
     let executedSubscriptions = {};
 
     //iterate through each key updated and if there is a subscription that relies on it, notify the subscriber so
-    //they can rerender the component 
-    notificationKeys.forEach((notificationKey) => {
+    //they can rerender the component
+    notificationKeys.forEach(notificationKey => {
       this.subscriptions.forEach((subscription, subIdx) => {
         //If the current key is in the subscription "watch list" called `keys` and the subscription has not already been run,
         //re-run the query
 
-        if (subscription.keys[notificationKey] && !executedSubscriptions[subIdx]) {
+        if (
+          subscription.keys[notificationKey] &&
+          !executedSubscriptions[subIdx]
+        ) {
           let newSubKeys = {};
-          let queryTransaction = new QueryTransaction(this.localState, newSubKeys);
+          let queryTransaction = new QueryTransaction(
+            this.localState,
+            newSubKeys
+          );
           let queryResult = subscription.query(queryTransaction, newSubKeys);
-          //If the query results have changed, invoke the callback (setState react function) 
+          //If the query results have changed, invoke the callback (setState react function)
           //for the subscriber, otherwise don't
-          if (typeof queryResult === "object" &&
-            !(JSON.stringify(queryResult) === JSON.stringify(subscription.prevResult))) {
+          if (
+            typeof queryResult === 'object' &&
+            !(
+              JSON.stringify(queryResult) ===
+              JSON.stringify(subscription.prevResult)
+            )
+          ) {
             subscription.prevResult = queryResult;
             subscription.callback(queryResult);
           } else if (!(queryResult === subscription.prevResult)) {
@@ -168,8 +181,8 @@ export default class Syncosaurus {
           //add the exectued subscription index to the object so we don't notify the subscriber twice
           executedSubscriptions[subIdx] = true;
         }
-      })
-    })
+      });
+    });
   }
 
   subscribePresence(callback) {
