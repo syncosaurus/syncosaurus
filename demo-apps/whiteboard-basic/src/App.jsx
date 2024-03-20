@@ -141,17 +141,12 @@ function Canvas() {
   );
 }
 
-function Rectangle({ id, onShapePointerDown }) {
-  const [props, setProps] = useState({
-    x: getRandomInt(500),
-    y: getRandomInt(500),
-    fill: getRandomColor(),
-  });
+function Rectangle({ shape, onShapePointerDown }) {
+  const [props, setProps] = useState(shape);
   const [selectedByMe, setSeletedByMe] = useState(false);
   const [selectedByOthers, setSeletedByOthers] = useState(false);
 
-  const { x, y, fill } = props;
-  console.log(x, y, fill);
+  const { id, x, y, fill } = props;
 
   // const selectedByMe = useSelf(me => me.presence.selectedShape === id);
   // const selectedByOthers = useOthers(others =>
@@ -198,14 +193,40 @@ function Loading() {
 }
 
 function App() {
+  const handleShapePointerDown = (e, id) => {
+    console.log('clicked rectangle:', id);
+  };
+
+  const mockStorage = [
+    {
+      id: '1',
+      x: getRandomInt(500),
+      y: getRandomInt(500),
+      fill: getRandomColor(),
+    },
+    {
+      id: '2',
+      x: getRandomInt(500),
+      y: getRandomInt(500),
+      fill: getRandomColor(),
+    },
+    {
+      id: '3',
+      x: getRandomInt(500),
+      y: getRandomInt(500),
+      fill: getRandomColor(),
+    },
+  ];
+
   return (
     <>
-      <Rectangle
-        id={'a'}
-        onShapePointerDown={() => console.log('clicked')}
-      ></Rectangle>
-      <Rectangle></Rectangle>
-      <Rectangle></Rectangle>
+      {mockStorage.map(rec => (
+        <Rectangle
+          key={rec.id}
+          shape={{ ...rec }}
+          onShapePointerDown={handleShapePointerDown}
+        />
+      ))}
     </>
   );
 }
