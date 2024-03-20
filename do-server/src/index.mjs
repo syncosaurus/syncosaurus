@@ -14,6 +14,14 @@ class ServerTransaction {
     return this.canon[key];
   }
 
+  has(key) {
+    return Object.hasOwn(this.canon, key);
+  }
+
+  isEmpty() {
+    return Object.keys(this.canon).length === 0;
+  }
+
   set(key, value) {
     this.canon[key] = value;
 
