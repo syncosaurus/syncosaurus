@@ -16,7 +16,7 @@ export default class Syncosaurus {
       //parse websocket response
       const {
         latestTransactionByClientId,
-        snapshotID,
+        // TODO add in snapshotID
         patch,
         canonState,
         presence,
@@ -52,7 +52,8 @@ export default class Syncosaurus {
       //update
       this.notify('count', { ...this.localState });
 
-      if (presence && this.presenceConnection) {
+      if (presence) {
+        // delete presence[this.userID]; // TODO uncomment this line
         this.presenceConnection(presence);
       }
     });
@@ -133,5 +134,11 @@ export default class Syncosaurus {
 
   subscribePresence(callback) {
     this.presenceConnection = callback;
+  }
+
+  updateMyPresence(newData) {
+    const payload = { presence: newData, clientID: this.userID };
+    const msg = JSON.stringify(payload);
+    this.socket.send(msg);
   }
 }

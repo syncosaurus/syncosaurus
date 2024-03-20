@@ -1,6 +1,6 @@
 import './App.css';
 import { mutators } from './utils/mutators';
-import { usePresence } from './utils/react.js';
+import { usePresence, useUpdateMyPresence } from './utils/react.js';
 import Syncosaurus from './utils/syncosaurus.js';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -28,6 +28,7 @@ const synco = new Syncosaurus({
 
 const OtherCursors = () => {
   const presence = usePresence(synco);
+  useUpdateMyPresence(synco);
 
   return (
     <>

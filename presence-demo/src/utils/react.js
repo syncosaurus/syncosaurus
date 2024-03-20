@@ -30,10 +30,24 @@ function useSubscribe(syncosaurus, query, initial) {
 function usePresence(syncosaurus) {
   const [presence, setPresence] = useState(syncosaurus.presence);
   useEffect(() => {
-    console.log('connecting Presence');
     syncosaurus.subscribePresence(setPresence);
   }, [syncosaurus]);
   return presence || {};
 }
 
-export { useSubscribe, usePresence };
+function useUpdateMyPresence(syncosaurus) {
+  useEffect(() => {
+    console.log('setting up presence');
+    const listener = window.addEventListener('mousemove', e => {
+      const mousePosition = { x: e.clientX, y: e.clientY };
+      // console.log('mouse position', mousePosition);
+      syncosaurus.updateMyPresence(mousePosition);
+    });
+
+    return () => {
+      console.log('removing window event listener');
+      removeEventListener('mousemove', listener);
+    };
+  }, [syncosaurus]);
+}
+export { useSubscribe, usePresence, useUpdateMyPresence };
