@@ -1,7 +1,7 @@
 import './App.css';
 import { mutators } from '../../../syncosaurus/mutators.js';
 import Syncosaurus from '../../../syncosaurus/syncosaurus.js';
-import { useSubscribe } from '../../../syncosaurus/react.js';
+import { useSubscribe } from '../../../syncosaurus/hooks.js';
 import { v4 as uuidv4 } from 'uuid';
 
 // TODO MOVE THIS ELSEWHERE
