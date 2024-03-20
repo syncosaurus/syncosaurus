@@ -4,7 +4,6 @@ import Syncosaurus from './utils/syncosaurus.js';
 import { useSubscribe } from './utils/react.js';
 import { v4 as uuidv4 } from 'uuid';
 
-
 // TODO MOVE THIS ELSEWHERE
 class User {
   constructor() {
@@ -31,7 +30,7 @@ function App() {
     synco.mutate.decrement({ key: incrementKey, delta: 1 });
   };
 
-  const count = useSubscribe(synco, (tx) => tx.get(incrementKey), 0);
+  const count = useSubscribe(synco, tx => tx.get(incrementKey), 0);
 
   return (
     <div>

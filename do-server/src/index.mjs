@@ -1,5 +1,6 @@
 import { mutators } from '../../frontend/src/utils/mutators.js';
 
+const MSG_FREQUENCY = 500;
 class ServerTransaction {
   constructor(canon, transactionID, mutator, mutatorArgs, patch) {
     this.transactionID = transactionID;
@@ -54,6 +55,7 @@ export class WebSocketServer {
     this.latestTransactionByClientId = {};
     this.currentSnapshotID = 0;
     this.patch = [];
+    this.presence = {};
 
     // `blockConcurrencyWhile()` ensures no requests are delivered until initialization completes.
     this.state.blockConcurrencyWhile(async () => {
@@ -67,6 +69,7 @@ export class WebSocketServer {
             snapshotID: this.currentSnapshotID,
             patch: this.patch,
             latestTransactionByClientId: this.latestTransactionByClientId,
+            presence: this.presence,
           };
 
           const json = JSON.stringify(currentSnapshot);
@@ -75,7 +78,7 @@ export class WebSocketServer {
           this.currentSnapshotID += 1; // TODO convert to uulid?
           this.patch = [];
         }),
-      1000
+      MSG_FREQUENCY
     );
   }
 
@@ -100,12 +103,24 @@ export class WebSocketServer {
       this.connections.push(server);
 
       server.addEventListener('message', event => {
-        const { transactionID, mutator, mutatorArgs, init, clientID } =
-          JSON.parse(event.data);
+        const {
+          transactionID,
+          mutator,
+          mutatorArgs,
+          init,
+          clientID,
+          presence,
+        } = JSON.parse(event.data);
 
         if (init) {
           const initState = { canonState: this.canon };
+          server.clientID = clientID;
           server.send(JSON.stringify(initState));
+          return;
+        }
+
+        if (presence) {
+          this.presence[clientID] = presence;
           return;
         }
 
@@ -126,7 +141,7 @@ export class WebSocketServer {
 
       server.addEventListener('close', async cls => {
         this.connections = this.connections.filter(ws => ws !== server);
-        server.close(cls.code, 'Durable Object is closing WebSocket');
+        delete this.presence[server.clientID];
       });
 
       // CF input gates protect against unwanted concurrrency here
