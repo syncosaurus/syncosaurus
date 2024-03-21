@@ -45,8 +45,9 @@ class ServerTransaction {
 // Worker
 export default {
   async fetch(request, env) {
+    const roomID = request.url.split('/room/').at(-1);
     // This example refers to the same Durable Object instance since it hardcodes the name "foo".
-    let id = env.WEBSOCKET_SERVER.idFromName('foo');
+    let id = env.WEBSOCKET_SERVER.idFromName(roomID);
     let stub = env.WEBSOCKET_SERVER.get(id);
 
     return await stub.fetch(request);
@@ -95,8 +96,9 @@ export class WebSocketServer {
   }
 
   // Handle HTTP requests from clients.
+  // \/\/[^\/]+\/websocket
   async fetch(request) {
-    if (request.url.endsWith('/websocket')) {
+    if (request.url.match(/\/\/[^\/]+\/websocket/)) {
       const upgradeHeader = request.headers.get('Upgrade');
       if (!upgradeHeader || upgradeHeader !== 'websocket') {
         return new Response('Durable Object expected Upgrade: websocket', {
