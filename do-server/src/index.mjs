@@ -56,11 +56,7 @@ export class WebSocketServer {
     this.currentSnapshotID = 0;
     this.patch = [];
     this.presence = {};
-
-    // `blockConcurrencyWhile()` ensures no requests are delivered until initialization completes.
-    this.state.blockConcurrencyWhile(async () => {
-      this.canon = (await this.state.storage.get('count')) || { count: 0 };
-    });
+    this.canon = {};
 
     this.messageInterval = setInterval(
       () =>
@@ -143,9 +139,6 @@ export class WebSocketServer {
         this.connections = this.connections.filter(ws => ws !== server);
         delete this.presence[server.clientID];
       });
-
-      // CF input gates protect against unwanted concurrrency here
-      await this.state.storage.put('count', this.canon);
 
       return new Response(null, {
         status: 101,
