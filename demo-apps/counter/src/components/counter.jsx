@@ -13,7 +13,7 @@ const synco = new Syncosaurus({
   userID: user.id,
 });
 
-export const Counter = ({ roomID, room }) => {
+export const Counter = ({ roomID }) => {
   // create an instance of the syncosaurus class, known as a client
   if (synco.roomID !== roomID || !synco.hasLiveWebsocket()) {
     synco.launch(roomID);
@@ -31,7 +31,6 @@ export const Counter = ({ roomID, room }) => {
 
   return (
     <div>
-      <div>Current room: {room}</div>
       <div>{count}</div>
       <button onClick={handleIncrementClick}>GROW</button>
       <button onClick={handleDecrementClick}>SHRINK</button>
