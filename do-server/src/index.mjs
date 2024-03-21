@@ -134,12 +134,12 @@ export class WebSocketServer {
         }
 
         if (reset) {
-          const initState = {
+          const resetState = {
             updateType: 'reset',
             snapshotID: this.currentSnapshotID - 1,
             canonState: this.canon,
           };
-          server.send(JSON.stringify(initState));
+          server.send(JSON.stringify(resetState));
           return;
         }
 
