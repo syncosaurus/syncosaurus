@@ -5,12 +5,13 @@ const Rectangle = ({ id, onShapePointerDown, synco }) => {
   const [selectedByMe, setSeletedByMe] = useState(false);
   const getShapeProps = tx => tx.get(id);
   const { x, y, fill } = useSubscribe(synco, getShapeProps, {});
-
   const handleShapePointerDown = e => {
     setSeletedByMe(true);
     onShapePointerDown(e, id);
   };
 
+  console.log('rendering a rectangle. ID:', id);
+  console.log(x, y, fill);
   return (
     <div
       onPointerDown={handleShapePointerDown}

@@ -22,8 +22,7 @@ async function decrement(tx, { key, delta }) {
 
 function addShape(tx, { id, x, y, fill }) {
   const prev = tx.get('shapeIds') || [];
-
-  console.log('creating a new shape', x, y, fill);
   tx.set(id, { id, x, y, fill });
   tx.set('shapeIds', [...prev, id]);
+  return { id, x, y, fill };
 }

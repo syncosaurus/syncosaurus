@@ -67,15 +67,16 @@ const Canvas = () => {
   };
 
   const handleAddButtonClick = () => {
-    synco.mutate.addShape({
+    const newStats = synco.mutate.addShape({
       id: nextId++,
       x: getRandomInt(500),
       y: getRandomInt(500),
       fill: getRandomColor(),
     });
-    console.log(synco);
+    console.log('new shape stats', newStats);
   };
 
+  console.log('rendering canvas');
   return (
     <>
       <button onClick={handleAddButtonClick}>Add shape</button>
