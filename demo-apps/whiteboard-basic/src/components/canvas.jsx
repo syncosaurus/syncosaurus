@@ -52,14 +52,12 @@ const Canvas = () => {
   };
 
   const handleCanvasPointerMove = e => {
-    const shapes = {};
     if (!selectedShapeId) return;
     e.preventDefault();
 
-    const x = Math.floor(e.clientX) - 50;
-    const y = Math.floor(e.clientY) - 100;
-
-    // synco.mutate.modifyShape(, { x, y });
+    const x = Math.floor(e.clientX) - 54;
+    const y = Math.floor(e.clientY) - 130;
+    synco.mutate.modifyShape({ id: selectedShapeId, x, y });
   };
 
   const handleAddButtonClick = () => {
@@ -74,7 +72,7 @@ const Canvas = () => {
   return (
     <>
       <button onClick={handleAddButtonClick}>Add shape</button>
-      <p>Selected shape:</p>
+      <p>Selected shape: {selectedShapeId}</p>
       <div
         className="canvas"
         onPointerUp={handleCanvasPointerUp}

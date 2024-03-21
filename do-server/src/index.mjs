@@ -1,6 +1,6 @@
 import { mutators } from '../../syncosaurus/mutators.js';
 
-const MSG_FREQUENCY = 500;
+const MSG_FREQUENCY = 16;
 class ServerTransaction {
   constructor(canon, transactionID, mutator, mutatorArgs, patch) {
     this.transactionID = transactionID;
