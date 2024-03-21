@@ -1,12 +1,5 @@
 import { useState } from 'react';
 import Rectangle from './rectangle';
-import Syncosaurus from '../../../../syncosaurus/syncosaurus';
-import {
-  useSubscribe,
-  usePresence,
-  useUpdateMyPresence,
-} from '../../../../syncosaurus/hooks';
-import { mutators } from '../../../../syncosaurus/mutators.js';
 
 const COLORS = [
   '#FF5733',
@@ -54,13 +47,6 @@ const mockShapes = {
     fill: getRandomColor(),
   },
 };
-
-const synco = new Syncosaurus({
-  mutators,
-  userID: 'user',
-});
-
-console.log(synco);
 
 const Canvas = () => {
   const [selectedShapeId, setSelectedShapeId] = useState(null);
