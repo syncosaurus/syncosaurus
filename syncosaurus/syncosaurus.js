@@ -123,7 +123,9 @@ export default class Syncosaurus {
     };
 
     this.subscriptions.push(subscriptionInfo);
-
+    if (queryResult) {
+      callback(queryResult);
+    }
     // Return a function to unsubscribe from the query when component is unmounted
     return () => {
       this.unsubscribe(query);
