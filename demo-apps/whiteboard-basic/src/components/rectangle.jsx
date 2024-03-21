@@ -13,7 +13,7 @@ const Rectangle = ({ id, onShapePointerDown, synco }) => {
     onShapePointerDown(e, id);
   };
 
-  if (!x || !y || !fill) {
+  if (x === undefined || y === undefined || fill === undefined) {
     return;
   }
   return (
