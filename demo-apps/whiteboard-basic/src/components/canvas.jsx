@@ -56,7 +56,7 @@ const Canvas = () => {
     e.preventDefault();
 
     const x = Math.floor(e.clientX) - 54;
-    const y = Math.floor(e.clientY) - 130;
+    const y = Math.floor(e.clientY) - 175;
     synco.mutate.modifyShape({ id: selectedShapeId, x, y });
   };
 
@@ -73,6 +73,7 @@ const Canvas = () => {
     <>
       <button onClick={handleAddButtonClick}>Add shape</button>
       <p>Selected shape: {selectedShapeId}</p>
+      <p>Total shapes: {shapeIds.length}</p>
       <div
         className="canvas"
         onPointerUp={handleCanvasPointerUp}
