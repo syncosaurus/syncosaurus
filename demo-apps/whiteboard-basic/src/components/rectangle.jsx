@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useSubscribe } from '../../../../syncosaurus/hooks';
 
-const Rectangle = ({ shape, onShapePointerDown }) => {
+const Rectangle = ({ id, onShapePointerDown, synco }) => {
   const [selectedByMe, setSeletedByMe] = useState(false);
-  const { id, x, y, fill } = shape;
+  const getShapeProps = tx => tx.get(id);
+  const { x, y, fill } = useSubscribe(synco, getShapeProps, {});
 
   const handleShapePointerDown = e => {
     setSeletedByMe(true);

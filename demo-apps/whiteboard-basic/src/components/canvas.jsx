@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import Rectangle from './rectangle';
+import Syncosaurus from '../../../../syncosaurus/syncosaurus';
+import { useSubscribe } from '../../../../syncosaurus/hooks';
+import { mutators } from '../../../../syncosaurus/mutators.js';
 
 const COLORS = [
   '#FF5733',
@@ -19,6 +22,8 @@ const COLORS = [
   '#FF0033',
 ];
 
+let nextId = 0;
+
 function getRandomInt(max) {
   return Math.floor(Math.random() * max);
 }
@@ -27,30 +32,15 @@ function getRandomColor() {
   return COLORS[getRandomInt(COLORS.length)];
 }
 
-const mockShapes = {
-  1: {
-    id: '1',
-    x: getRandomInt(500),
-    y: getRandomInt(500),
-    fill: getRandomColor(),
-  },
-  2: {
-    id: '2',
-    x: getRandomInt(500),
-    y: getRandomInt(500),
-    fill: getRandomColor(),
-  },
-  3: {
-    id: '3',
-    x: getRandomInt(500),
-    y: getRandomInt(500),
-    fill: getRandomColor(),
-  },
-};
+const synco = new Syncosaurus({ mutators, userID: 'alex' });
+
+const getShapeIds = tx => tx.get('shapeIds');
 
 const Canvas = () => {
   const [selectedShapeId, setSelectedShapeId] = useState(null);
-  const [shapes, setShapes] = useState(mockShapes);
+  // const [shapes, setShapes] = useState(mockShapes);
+
+  const shapeIds = useSubscribe(synco, getShapeIds, []);
 
   const handleShapePointerDown = (e, id) => {
     e.preventDefault(); // These e.preventDefaults stop text from being highlighted when the user clicks and holds/drags a rectangle
@@ -63,6 +53,7 @@ const Canvas = () => {
   };
 
   const handleCanvasPointerMove = e => {
+    const shapes = {};
     if (!selectedShapeId) return;
     e.preventDefault();
 
@@ -72,23 +63,38 @@ const Canvas = () => {
     const newShape = { ...shapes[selectedShapeId], x, y };
     const newShapes = { ...shapes };
     newShapes[selectedShapeId] = newShape;
-    setShapes(newShapes);
+    // setShapes(newShapes);
   };
+
+  const handleAddButtonClick = () => {
+    synco.mutate.addShape({
+      id: nextId++,
+      x: getRandomInt(500),
+      y: getRandomInt(500),
+      fill: getRandomColor(),
+    });
+    console.log(synco);
+  };
+
   return (
-    <div
-      className="canvas"
-      onPointerUp={handleCanvasPointerUp}
-      onPointerMove={handleCanvasPointerMove}
-    >
-      <p>Selected shape: {selectedShapeId}</p>
-      {Object.keys(shapes).map(id => (
-        <Rectangle
-          key={id}
-          shape={shapes[id]}
-          onShapePointerDown={handleShapePointerDown}
-        />
-      ))}
-    </div>
+    <>
+      <button onClick={handleAddButtonClick}>Add shape</button>
+      <div
+        className="canvas"
+        onPointerUp={handleCanvasPointerUp}
+        onPointerMove={handleCanvasPointerMove}
+      >
+        <p>Selected shape: {selectedShapeId}</p>
+        {shapeIds.map(id => (
+          <Rectangle
+            key={id}
+            id={id}
+            onShapePointerDown={handleShapePointerDown}
+            synco={synco}
+          />
+        ))}
+      </div>
+    </>
   );
 };
 

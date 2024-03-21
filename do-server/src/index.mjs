@@ -68,6 +68,7 @@ export class WebSocketServer {
             presence: this.presence,
           };
 
+          console.log('canon', this.canon);
           const json = JSON.stringify(currentSnapshot);
           this.broadcast(json);
 
