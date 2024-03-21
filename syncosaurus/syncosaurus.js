@@ -7,6 +7,7 @@ export default class Syncosaurus {
     this.txQueue = []; // create a tx
     this.userID = options.userID;
     this.presenceConnection;
+    this.prevServerSnapshot = null;
 
     // establish websocket connection with DO
     this.socket = new WebSocket('ws://localhost:8787/websocket');
@@ -15,6 +16,7 @@ export default class Syncosaurus {
     this.socket.addEventListener('message', event => {
       //parse websocket response
       const {
+        updateType,
         latestTransactionByClientId,
         snapshotID,
         patch,
@@ -22,11 +24,29 @@ export default class Syncosaurus {
         presence,
       } = JSON.parse(event.data);
 
-      if (canonState) {
+      //initial state is received
+      if (updateType === 'init') {
+        this.prevServerSnapshot = snapshotID;
         this.localState = canonState;
         this.notifyList(Object.keys(this.localState));
         return;
+        //reset event is received - may be able to optimize this logic later
+      } else if (updateType === 'reset') {
+        this.prevServerSnapshot = snapshotID;
+        this.localState = canonState;
+        this.notifyList(Object.keys(this.localState));
+        return;
+        //check to see if reset is needed because we are missing one delta
+      } else if (
+        updateType === 'delta' &&
+        snapshotID - this.prevServerSnapshot > 1
+      ) {
+        this.socket.send(JSON.stringify({ reset: true }));
+        //no need to apply update locally because it will be encompassed when next init arrives
+        return;
       }
+
+      this.prevServerSnapshot = snapshotID;
 
       //remove pending events from queue if they occured before latestTransactionByClientId
       this.txQueue = this.txQueue.filter(

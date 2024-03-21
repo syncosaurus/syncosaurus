@@ -1,6 +1,6 @@
 import { mutators } from '../../syncosaurus/mutators.js';
 
-const MSG_FREQUENCY = 500;
+const MSG_FREQUENCY = 20;
 class ServerTransaction {
   constructor(canon, transactionID, mutator, mutatorArgs, patch) {
     this.transactionID = transactionID;
@@ -74,6 +74,7 @@ export class WebSocketServer {
       () =>
         this.state.blockConcurrencyWhile(() => {
           const currentSnapshot = {
+            updateType: 'delta',
             snapshotID: this.currentSnapshotID,
             patch: this.patch,
             latestTransactionByClientId: this.latestTransactionByClientId,
@@ -118,11 +119,26 @@ export class WebSocketServer {
           init,
           clientID,
           presence,
+          reset,
         } = JSON.parse(event.data);
 
         if (init) {
-          const initState = { canonState: this.canon };
+          const initState = {
+            updateType: 'init',
+            snapshotID: this.currentSnapshotID - 1,
+            canonState: this.canon,
+          };
           server.clientID = clientID;
+          server.send(JSON.stringify(initState));
+          return;
+        }
+
+        if (reset) {
+          const initState = {
+            updateType: 'reset',
+            snapshotID: this.currentSnapshotID - 1,
+            canonState: this.canon,
+          };
           server.send(JSON.stringify(initState));
           return;
         }
