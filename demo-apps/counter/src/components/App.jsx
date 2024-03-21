@@ -2,7 +2,6 @@ import '../assets/App.css';
 import { Counter } from './counter';
 import { mockDatabase } from '../services/mockDatabase';
 import { useState, useEffect } from 'react';
-import {} from 'react-dom/client';
 
 function App() {
   const [roomsAndRoomIDs, setRoomsAndRoomIDs] = useState(null);
