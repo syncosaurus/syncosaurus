@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Rectangle from './rectangle';
 import Syncosaurus from '../../../../syncosaurus/syncosaurus';
 import { useSubscribe } from '../../../../syncosaurus/hooks';
@@ -37,7 +37,9 @@ const getShapeIds = tx => tx.get('shapeIds');
 
 const Canvas = () => {
   const [selectedShapeId, setSelectedShapeId] = useState(null);
-  // const [shapes, setShapes] = useState(mockShapes);
+  useEffect(() => {
+    synco.launch('foooooooo');
+  }, []);
 
   const shapeIds = useSubscribe(synco, getShapeIds, []);
 
