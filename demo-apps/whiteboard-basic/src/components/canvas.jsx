@@ -3,6 +3,7 @@ import Rectangle from './rectangle';
 import Syncosaurus from '../../../../syncosaurus/syncosaurus';
 import { useSubscribe } from '../../../../syncosaurus/hooks';
 import { mutators } from '../../../../syncosaurus/mutators.js';
+import { v4 as uuidv4 } from 'uuid';
 
 const COLORS = [
   '#FF5733',
@@ -21,8 +22,6 @@ const COLORS = [
   '#FF0052',
   '#FF0033',
 ];
-
-let nextId = 0;
 
 function getRandomInt(max) {
   return Math.floor(Math.random() * max);
@@ -60,32 +59,27 @@ const Canvas = () => {
     const x = Math.floor(e.clientX) - 50;
     const y = Math.floor(e.clientY) - 100;
 
-    const newShape = { ...shapes[selectedShapeId], x, y };
-    const newShapes = { ...shapes };
-    newShapes[selectedShapeId] = newShape;
-    // setShapes(newShapes);
+    // synco.mutate.modifyShape(, { x, y });
   };
 
   const handleAddButtonClick = () => {
-    const newStats = synco.mutate.addShape({
-      id: nextId++,
+    synco.mutate.addShape({
+      id: uuidv4(),
       x: getRandomInt(500),
       y: getRandomInt(500),
       fill: getRandomColor(),
     });
-    console.log('new shape stats', newStats);
   };
 
-  console.log('rendering canvas');
   return (
     <>
       <button onClick={handleAddButtonClick}>Add shape</button>
+      <p>Selected shape:</p>
       <div
         className="canvas"
         onPointerUp={handleCanvasPointerUp}
         onPointerMove={handleCanvasPointerMove}
       >
-        <p>Selected shape: {selectedShapeId}</p>
         {shapeIds.map(id => (
           <Rectangle
             key={id}
