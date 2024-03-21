@@ -1,4 +1,5 @@
 import { WriteTransaction, ReadTransaction } from './transactions';
+const roomUriPrefix = 'ws://localhost:8787/websocket/room';
 
 export default class Syncosaurus {
   constructor(options) {
@@ -8,127 +9,8 @@ export default class Syncosaurus {
     this.userID = options.userID;
     this.presenceConnection;
     this.prevServerSnapshot = null;
-
-    // establish websocket connection with DO
-    this.socket = new WebSocket('ws://localhost:8787/websocket');
-
-    //When message received from websocket, update canon state and re-run pending mutations
-    this.socket.addEventListener('message', event => {
-      //parse websocket response
-      const {
-        updateType,
-        latestTransactionByClientId,
-        snapshotID,
-        patch,
-        canonState,
-        presence,
-      } = JSON.parse(event.data);
-
-      //initial state is received
-      if (updateType === 'init') {
-        this.prevServerSnapshot = snapshotID;
-        this.localState = canonState;
-        this.notifyList(Object.keys(this.localState));
-        return;
-        //reset event is received - may be able to optimize this logic later
-      } else if (updateType === 'reset') {
-        this.prevServerSnapshot = snapshotID;
-        this.localState = canonState;
-        this.notifyList(Object.keys(this.localState));
-        return;
-        //check to see if reset is needed because we are missing one delta
-      } else if (
-        updateType === 'delta' &&
-        snapshotID - this.prevServerSnapshot > 1
-      ) {
-        this.socket.send(JSON.stringify({ reset: true }));
-        //no need to apply update locally because it will be encompassed when next init arrives
-        return;
-      }
-
-      this.prevServerSnapshot = snapshotID;
-
-      //remove pending events from queue if they occured before latestTransactionByClientId
-      this.txQueue = this.txQueue.filter(
-        tx => tx.id > latestTransactionByClientId[this.userID]
-      );
-
-      let notificationKeyArray = [];
-      //iterate through patch updates and run them on local state
-      patch.forEach(operation => {
-        if (operation.op === 'put') {
-          this.localState[operation.key] = operation.value;
-        } else if (operation.op === 'del') {
-          delete this.localState[operation.key];
-        } else if (operation.op === 'clear') {
-          this.localState = {};
-        }
-
-        notificationKeyArray.push(operation.key);
-      });
-
-      //re-run any pending mutations on top of canonClone to produce the new localState
-      this.txQueue.forEach(tx => {
-        this.replayMutate[tx.mutator](tx.mutatorArgs);
-      });
-
-      //update
-      this.notifyList(notificationKeyArray);
-      // This checks if the presenceConnection exists on the app
-      // If the client app doesn't ever use the usePresence hook, this block is always ignored
-      if (presence && this.presenceConnection) {
-        delete presence[this.userID];
-        this.presenceConnection(presence);
-      }
-    });
-
-    this.socket.addEventListener('open', () => {
-      this.socket.send(JSON.stringify({ init: true, clientID: this.userID }));
-    });
-
-    //The new mutators will be run with a new transaction instance with prefilled
-    //so everytime it's called it creates a new transaction and adds it to the queue and the
-    //kvStore
-    const { mutators } = options;
-    this.mutate = {};
-    this.replayMutate = {};
-    for (let mutator in mutators) {
-      this.mutate[mutator] = args => {
-        let subKeys = {};
-        const transaction = new WriteTransaction(
-          this.localState,
-          mutator,
-          args,
-          subKeys
-        );
-        this.txQueue.push(transaction);
-        mutators[mutator](transaction, args); //execute mutator on local state
-        this.notifyList(Object.keys(subKeys)); //notify subscribers
-
-        //send transaction to the server if this is the first time and not a replay
-        this.socket.send(
-          JSON.stringify({
-            transactionID: transaction.id,
-            mutator: mutator,
-            mutatorArgs: args,
-            clientID: this.userID,
-          })
-        );
-      };
-
-      this.replayMutate[mutator] = args => {
-        let subKeys = {};
-        const transaction = new WriteTransaction(
-          this.localState,
-          mutator,
-          args,
-          subKeys
-        );
-        mutators[mutator](transaction, args);
-      };
-    }
-
     this.subscriptions = [];
+    this.options = options;
   }
 
   subscribe(query, callback) {
@@ -213,5 +95,146 @@ export default class Syncosaurus {
     const payload = { presence: newData, clientID: this.userID };
     const msg = JSON.stringify(payload);
     this.socket.send(msg);
+  }
+
+  launch(roomID) {
+    this.setRoomID(roomID);
+    this.initalizeWebsocket();
+    this.initalizeMutators();
+  }
+
+  setRoomID(roomID) {
+    this.roomID = roomID;
+  }
+
+  hasLiveWebsocket() {
+    if (!this.socket) {
+      return false;
+    }
+
+    return this.socket.readyState === 0 || this.socket.readyState === 1;
+  }
+
+  initalizeWebsocket() {
+    // establish websocket connection with DO
+    this.socket = new WebSocket(`${roomUriPrefix}/${this.roomID}`);
+
+    //When message received from websocket, update canon state and re-run pending mutations
+    this.socket.addEventListener('message', event => {
+      //parse websocket response
+      const {
+        updateType,
+        latestTransactionByClientId,
+        snapshotID,
+        patch,
+        canonState,
+        presence,
+      } = JSON.parse(event.data);
+
+      //initial state is received
+      if (updateType === 'init') {
+        this.prevServerSnapshot = snapshotID;
+        this.localState = canonState;
+        this.notifyList(Object.keys(this.localState));
+        return;
+        //reset event is received - may be able to optimize this logic later
+      } else if (updateType === 'reset') {
+        this.prevServerSnapshot = snapshotID;
+        this.localState = canonState;
+        this.notifyList(Object.keys(this.localState));
+        return;
+        //check to see if reset is needed because we are missing one delta
+      } else if (
+        updateType === 'delta' &&
+        snapshotID - this.prevServerSnapshot > 1
+      ) {
+        this.socket.send(JSON.stringify({ reset: true }));
+        //no need to apply update locally because it will be encompassed when next init arrives
+        return;
+      }
+
+      this.prevServerSnapshot = snapshotID;
+
+      //remove pending events from queue if they occured before latestTransactionByClientId
+      this.txQueue = this.txQueue.filter(
+        tx => tx.id > latestTransactionByClientId[this.userID]
+      );
+
+      let notificationKeyArray = [];
+      //iterate through patch updates and run them on local state
+      patch.forEach(operation => {
+        if (operation.op === 'put') {
+          this.localState[operation.key] = operation.value;
+        } else if (operation.op === 'del') {
+          delete this.localState[operation.key];
+        } else if (operation.op === 'clear') {
+          this.localState = {};
+        }
+
+        notificationKeyArray.push(operation.key);
+      });
+
+      //re-run any pending mutations on top of canonClone to produce the new localState
+      this.txQueue.forEach(tx => {
+        this.replayMutate[tx.mutator](tx.mutatorArgs);
+      });
+
+      //update
+      this.notifyList(notificationKeyArray);
+      // This checks if the presenceConnection exists on the app
+      // If the client app doesn't ever use the usePresence hook, this block is always ignored
+      if (presence && this.presenceConnection) {
+        delete presence[this.userID];
+        this.presenceConnection(presence);
+      }
+    });
+
+    this.socket.addEventListener('open', () => {
+      this.socket.send(JSON.stringify({ init: true, clientID: this.userID }));
+    });
+  }
+
+  initalizeMutators() {
+    //The new mutators will be run with a new transaction instance with prefilled
+    //so everytime it's called it creates a new transaction and adds it to the queue and the
+    //kvStore
+    const { mutators } = this.options;
+    this.mutate = {};
+    this.replayMutate = {};
+    for (let mutator in mutators) {
+      this.mutate[mutator] = args => {
+        let subKeys = {};
+        const transaction = new WriteTransaction(
+          this.localState,
+          mutator,
+          args,
+          subKeys
+        );
+        this.txQueue.push(transaction);
+        mutators[mutator](transaction, args); //execute mutator on local state
+        this.notifyList(Object.keys(subKeys)); //notify subscribers
+
+        //send transaction to the server if this is the first time and not a replay
+        this.socket.send(
+          JSON.stringify({
+            transactionID: transaction.id,
+            mutator: mutator,
+            mutatorArgs: args,
+            clientID: this.userID,
+          })
+        );
+      };
+
+      this.replayMutate[mutator] = args => {
+        let subKeys = {};
+        const transaction = new WriteTransaction(
+          this.localState,
+          mutator,
+          args,
+          subKeys
+        );
+        mutators[mutator](transaction, args);
+      };
+    }
   }
 }
