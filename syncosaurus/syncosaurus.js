@@ -1,4 +1,5 @@
 import { WriteTransaction, ReadTransaction } from './transactions';
+const roomUriPrefix = 'ws://localhost:8787/websocket/room';
 
 export default class Syncosaurus {
   constructor(options) {
@@ -183,7 +184,7 @@ export default class Syncosaurus {
     for (let mutator in mutators) {
       this.mutate[mutator] = args => {
         let subKeys = {};
-        const transaction = new ReadTransaction(
+        const transaction = new WriteTransaction(
           this.localState,
           mutator,
           args,
@@ -206,7 +207,7 @@ export default class Syncosaurus {
 
       this.replayMutate[mutator] = args => {
         let subKeys = {};
-        const transaction = new ReadTransaction(
+        const transaction = new WriteTransaction(
           this.localState,
           mutator,
           args,
