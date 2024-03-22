@@ -1,5 +1,4 @@
 import { WriteTransaction, ReadTransaction } from './transactions';
-const roomUriPrefix = 'ws://localhost:8787/websocket/room';
 
 export default class Syncosaurus {
   constructor(options) {
@@ -119,7 +118,9 @@ export default class Syncosaurus {
 
   initalizeWebsocket() {
     // establish websocket connection with DO
-    this.socket = new WebSocket(`${roomUriPrefix}/${this.roomID}`);
+    this.socket = new WebSocket(
+      `${import.meta.env.VITE_DO_ROOM_URI}/${this.roomID}`
+    );
 
     //When message received from websocket, update canon state and re-run pending mutations
     this.socket.addEventListener('message', event => {
