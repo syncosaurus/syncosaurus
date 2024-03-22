@@ -1,9 +1,14 @@
 import { useEffect, useState } from 'react';
 import Rectangle from './rectangle';
 import Syncosaurus from '../../../../syncosaurus/syncosaurus';
-import { useSubscribe } from '../../../../syncosaurus/hooks';
+import {
+  usePresence,
+  useSubscribe,
+  useUpdateMyPresence,
+} from '../../../../syncosaurus/hooks';
 import { mutators } from '../../../../syncosaurus/mutators.js';
 import { v4 as uuidv4 } from 'uuid';
+import cursorSVG from '../assets/cursor.svg';
 
 const COLORS = [
   '#FF5733',
@@ -31,12 +36,37 @@ function getRandomColor() {
   return COLORS[getRandomInt(COLORS.length)];
 }
 
-const synco = new Syncosaurus({ mutators, userID: 'alex' });
-
 const getShapeIds = tx => tx.get('shapeIds');
+
+const synco = new Syncosaurus({ mutators, userID: uuidv4() });
+
+const Cursors = ({ synco }) => {
+  const presence = usePresence(synco);
+  useUpdateMyPresence(synco);
+
+  return (
+    <>
+      {Object.entries(presence).map(([id, { x, y }]) => {
+        return (
+          <div
+            key={id}
+            className="cursor"
+            style={{
+              transform: `translate(${x}px, ${y}px)`,
+            }}
+          >
+            <img src={cursorSVG} alt="cursor" className="cursorIcon" />
+          </div>
+        );
+      })}
+    </>
+  );
+};
 
 const Canvas = () => {
   const [selectedShapeId, setSelectedShapeId] = useState(null);
+  useUpdateMyPresence(synco);
+
   useEffect(() => {
     synco.launch('foooooooo');
   }, []);
@@ -73,6 +103,7 @@ const Canvas = () => {
 
   return (
     <>
+      <Cursors synco={synco} />
       <button onClick={handleAddButtonClick}>Add shape</button>
       <p>Selected shape: {selectedShapeId}</p>
       <p>Total shapes: {shapeIds.length}</p>
