@@ -30,16 +30,13 @@
   box-sizing: border-box;
 }
 
-.cursor {
+.cursorContainer {
   position: absolute;
   z-index: 300;
 }
 
 .cursorIcon {
-  height: 30px;
-  width: 30px;
   transform: translate(-50%, -50%);
-  pointer-events: move;
 }
 
 .toolbar {

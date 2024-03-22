@@ -22,7 +22,6 @@ const Rectangle = ({ id, onShapePointerDown, synco }) => {
       className={'rectangle'}
       style={{
         transform: `translate(${x}px, ${y}px)`,
-        transition: !selectedByMe ? 'transform 120ms linear' : 'none', // this is a fancy css trick to smooth other user position updates I think
         backgroundColor: fill || '#CCC',
       }}
     >

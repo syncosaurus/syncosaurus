@@ -8,9 +8,9 @@ import {
 } from '../../../../syncosaurus/hooks';
 import { mutators } from '../../../../syncosaurus/mutators.js';
 import { v4 as uuidv4 } from 'uuid';
-import cursorSVG from '../assets/cursor.svg';
+import Cursor from './cursor.jsx';
 
-const COLORS = [
+const rectangleColors = [
   '#FF5733',
   '#FFC300',
   '#FFDC00',
@@ -28,12 +28,25 @@ const COLORS = [
   '#FF0033',
 ];
 
+const cursorColors = [
+  '#FF6EC7', // Hot pink
+  '#7A4ED9', // Purple
+  '#FFD700', // Gold
+  '#00FFEE', // Cyan
+  '#FF00FF', // Magenta
+  '#FFA500', // Orange
+  '#00FF00', // Neon green
+  '#FF6347', // Tomato
+  '#00FFFF', // Aqua
+  '#FF1493', // Deep pink
+];
+
 function getRandomInt(max) {
   return Math.floor(Math.random() * max);
 }
 
 function getRandomColor() {
-  return COLORS[getRandomInt(COLORS.length)];
+  return rectangleColors[getRandomInt(rectangleColors.length)];
 }
 
 const getShapeIds = tx => tx.get('shapeIds');
@@ -41,21 +54,21 @@ const getShapeIds = tx => tx.get('shapeIds');
 const synco = new Syncosaurus({ mutators, userID: uuidv4() });
 
 const Cursors = ({ synco }) => {
-  const presence = usePresence(synco);
+  const others = usePresence(synco);
   useUpdateMyPresence(synco);
 
   return (
     <>
-      {Object.entries(presence).map(([id, { x, y }]) => {
+      {Object.entries(others).map(([id, { x, y }], idx) => {
         return (
           <div
             key={id}
-            className="cursor"
+            className="cursorContainer"
             style={{
               transform: `translate(${x}px, ${y}px)`,
             }}
           >
-            <img src={cursorSVG} alt="cursor" className="cursorIcon" />
+            <Cursor fill={cursorColors[idx]} />
           </div>
         );
       })}
@@ -78,14 +91,12 @@ const Canvas = () => {
     setSelectedShapeId(id);
   };
 
-  const handleCanvasPointerUp = e => {
-    e.preventDefault();
+  const handleCanvasPointerUp = () => {
     setSelectedShapeId(null);
   };
 
   const handleCanvasPointerMove = e => {
     if (!selectedShapeId) return;
-    e.preventDefault();
 
     const x = Math.floor(e.clientX) - 54;
     const y = Math.floor(e.clientY) - 175;
@@ -105,7 +116,7 @@ const Canvas = () => {
     <>
       <Cursors synco={synco} />
       <button onClick={handleAddButtonClick}>Add shape</button>
-      <p>Selected shape: {selectedShapeId}</p>
+      <p>Selected shape: {selectedShapeId && selectedShapeId.slice(0, 3)}</p>
       <p>Total shapes: {shapeIds.length}</p>
       <div
         className="canvas"
