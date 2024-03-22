@@ -4,7 +4,9 @@
   "description": "A framework for adding realtime, collaborative features to React applications.",
   "main": "syncosaurus.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "deploy": "wrangler deploy ./do/index.mjs",
+    "dev": "wrangler dev ./do/index.mjs",
+    "start": "wrangler dev"
   },
   "repository": {
     "type": "git",
@@ -18,5 +20,8 @@
   "homepage": "https://github.com/syncosaurus/syncosaurus#readme",
   "dependencies": {
     "ulidx": "^2.3.0"
+  },
+  "devDependencies": {
+    "wrangler": "^3.37.0"
   }
 }
