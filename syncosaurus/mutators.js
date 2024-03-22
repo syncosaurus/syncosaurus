@@ -3,6 +3,8 @@ export const mutators = {
   decrement,
   addTodo,
   removeTodo,
+  addShape,
+  modifyShape,
 };
 
 //Mutators for the counter application
@@ -20,6 +22,7 @@ async function decrement(tx, { key, delta }) {
   tx.set(key, next);
 }
 
+
 //Mutators for the Todo Application
 async function addTodo(tx, { id, text }) {
   const todo = { id, text, complete: false };
@@ -29,4 +32,19 @@ async function addTodo(tx, { id, text }) {
 
 async function removeTodo(tx, { id }) {
   await tx.delete(`todo/${id}`);
+}
+
+function addShape(tx, { id, x, y, fill }) {
+  const prev = tx.get('shapeIds') || [];
+  tx.set(id, { id, x, y, fill });
+  tx.set('shapeIds', [...prev, id]);
+  return { id, x, y, fill };
+}
+
+function modifyShape(tx, args) {
+  const { id, ...changes } = args;
+  const prev = tx.get(id);
+  const next = { ...prev, ...changes };
+  tx.set(id, next);
+
 }
