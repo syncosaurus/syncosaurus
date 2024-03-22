@@ -25,7 +25,9 @@ export default class Syncosaurus {
     };
 
     this.subscriptions.push(subscriptionInfo);
-
+    if (queryResult) {
+      callback(queryResult);
+    }
     // Return a function to unsubscribe from the query when component is unmounted
     return () => {
       this.unsubscribe(query);
@@ -115,12 +117,21 @@ export default class Syncosaurus {
     return this.socket.readyState === 0 || this.socket.readyState === 1;
   }
 
-  initalizeWebsocket() {
+  async initalizeWebsocket() {
     // establish websocket connection with DO
     this.socket = new WebSocket(`${roomUriPrefix}/${this.roomID}`);
 
+    // wait for socket to open before accepting messages
+    this.socket.addEventListener('open', () => {
+      this.socket.send(JSON.stringify({ init: true, clientID: this.userID }));
+    });
+
     //When message received from websocket, update canon state and re-run pending mutations
     this.socket.addEventListener('message', event => {
+      if (!this.hasLiveWebsocket()) {
+        return;
+      }
+
       //parse websocket response
       const {
         updateType,
@@ -146,7 +157,8 @@ export default class Syncosaurus {
         //check to see if reset is needed because we are missing one delta
       } else if (
         updateType === 'delta' &&
-        snapshotID - this.prevServerSnapshot > 1
+        snapshotID - this.prevServerSnapshot > 1 &&
+        this.socket.readyState === 1
       ) {
         this.socket.send(JSON.stringify({ reset: true }));
         //no need to apply update locally because it will be encompassed when next init arrives
@@ -190,10 +202,6 @@ export default class Syncosaurus {
         delete presence[this.userID];
         this.presenceConnection(presence);
       }
-    });
-
-    this.socket.addEventListener('open', () => {
-      this.socket.send(JSON.stringify({ init: true, clientID: this.userID }));
     });
   }
 

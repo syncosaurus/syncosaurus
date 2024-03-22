@@ -1,30 +1,38 @@
 import '../assets/App.css';
 import { Counter } from './counter';
-import { mockDatabase } from '../services/mockDatabase';
+// import { mockDatabase } from '../services/mockDatabase';
 import { useState, useEffect } from 'react';
 
+const baseURL = "http://localhost:8787";
+
 function App() {
-  const [roomsAndRoomIDs, setRoomsAndRoomIDs] = useState(null);
+  const [encryptedRoomNameList, setEncryptedRoomNameList] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState(null);
 
   useEffect(() => {
-    (async () => {
-      setRoomsAndRoomIDs(await mockDatabase.getAllRooms());
-    })();
+    const fetchList = async () => {
+      const response = await fetch(`${baseURL}/syncosaurus`);
+      const { encryptedRoomNameList: list } = await response.json();
+
+      setEncryptedRoomNameList(list);
+    };
+
+    fetchList();
   }, []);
 
-  const handleButtonClick = event => {
-    const room = event.target.innerText;
-    setSelectedRoom(room);
+  const handleButtonClick = async (e, roomName) => {
+    e.preventDefault();
+
+    setSelectedRoom(roomName);
   };
 
   return (
     <div>
-      {roomsAndRoomIDs ? (
-        Object.keys(roomsAndRoomIDs).map(room => {
+      {encryptedRoomNameList.length ? (
+        encryptedRoomNameList.map(roomName => {
           return (
-            <button key={room} onClick={handleButtonClick}>
-              {room}
+            <button key={roomName} onClick={(e) => handleButtonClick(e, roomName)}>
+              {roomName}
             </button>
           );
         })
@@ -32,7 +40,7 @@ function App() {
         <p>Loading...</p>
       )}
       {selectedRoom && (
-        <Counter roomID={roomsAndRoomIDs[selectedRoom]} room={selectedRoom} />
+        <Counter roomID={selectedRoom}/>
       )}
     </div>
   );

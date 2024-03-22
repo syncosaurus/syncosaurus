@@ -37,15 +37,12 @@ function usePresence(syncosaurus) {
 
 function useUpdateMyPresence(syncosaurus) {
   useEffect(() => {
-    console.log('setting up presence');
-    const listener = window.addEventListener('mousemove', e => {
+    const listener = window.addEventListener('pointermove', e => {
       const mousePosition = { x: e.clientX, y: e.clientY };
-      // console.log('mouse position', mousePosition);
       syncosaurus.updateMyPresence(mousePosition);
     });
 
     return () => {
-      console.log('removing window event listener');
       removeEventListener('mousemove', listener);
     };
   }, [syncosaurus]);

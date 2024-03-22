@@ -1,6 +1,8 @@
 export const mutators = {
   increment,
   decrement,
+  addShape,
+  modifyShape,
 };
 
 //Mutators are async in replicache for startup: https://doc.replicache.dev/tutorial/adding-mutators
@@ -17,4 +19,18 @@ async function decrement(tx, { key, delta }) {
   const prev = tx.get(key);
   const next = (prev ?? 0) - delta;
   tx.set(key, next);
+}
+
+function addShape(tx, { id, x, y, fill }) {
+  const prev = tx.get('shapeIds') || [];
+  tx.set(id, { id, x, y, fill });
+  tx.set('shapeIds', [...prev, id]);
+  return { id, x, y, fill };
+}
+
+function modifyShape(tx, args) {
+  const { id, ...changes } = args;
+  const prev = tx.get(id);
+  const next = { ...prev, ...changes };
+  tx.set(id, next);
 }

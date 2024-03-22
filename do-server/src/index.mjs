@@ -1,6 +1,6 @@
 import { mutators } from '../../syncosaurus/mutators.js';
 
-const MSG_FREQUENCY = 20;
+const MSG_FREQUENCY = 16;
 class ServerTransaction {
   constructor(canon, transactionID, mutator, mutatorArgs, patch) {
     this.transactionID = transactionID;
@@ -43,15 +43,84 @@ class ServerTransaction {
 }
 
 // Worker
-export default {
-  async fetch(request, env) {
-    const roomID = request.url.split('/room/').at(-1);
-    // This example refers to the same Durable Object instance since it hardcodes the name "foo".
-    let id = env.WEBSOCKET_SERVER.idFromName(roomID);
-    let stub = env.WEBSOCKET_SERVER.get(id);
+// Worker with Basic Room Encryption
+// Test Entry:
+// decryptionKey:  nDvnwoq/qrKCkBaXdHQ0riiXsT/80IrHmyiLqMeVYR4=
+// ciphertext:  b6BUmmtioZh3Mm14q7pXAijuYQ==
+// iv:  QHxgUtqF6PAPhiaQ
+// decrypted text: foo
 
-    return await stub.fetch(request);
-  },
+// current room URL shape: `http://my-collab-app.com/room/encryptedRoomID`
+// excalidraw live session room URL shape: `http://my-collab-app.com/#room=encryptedRoomID`
+
+// these eventually will be cloudflare env variables
+const allowedOrigin = 'http://localhost:5173';
+const KV_NAMESPACE = 'room_keys_2';
+
+export default {
+	async fetch(request, env) {
+		const { encryptSymmetric, decryptSymmetric, generateKey } = await import('./encrypt.js');
+		let response;
+
+		if (request.method === 'OPTIONS') {
+			return new Response(null, {
+				status: 204,
+				headers: {
+					'Access-Control-Allow-Credentials': 'true',
+					'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+					'Access-Control-Allow-Origin': allowedOrigin,
+					'Access-Control-Allow-Headers': 'Content-Type',
+				},
+			});
+		}
+
+		if (request.url.endsWith('syncosaurus') && request.method === 'POST') {
+			const { newRoomName } = await request.json();
+			const key = generateKey();
+			const { ciphertext: encryptedRoomName, iv } = await encryptSymmetric(newRoomName, key);
+
+			await env[KV_NAMESPACE].put(encryptedRoomName, JSON.stringify({ key, iv }));
+			console.log(`'${encryptedRoomName}': ${await env[KV_NAMESPACE].get(encryptedRoomName)}`);
+			response = Response.json({ encryptedRoomName });
+			response.headers.set('Access-Control-Allow-Origin', allowedOrigin);
+			response.headers.set('Access-Control-Allow-Credentials', 'true');
+
+			return response;
+		}
+
+		if (request.url.endsWith('syncosaurus') && request.method === 'GET') {
+			const { keys } = await env[KV_NAMESPACE].list();
+			const encryptedRoomNameList = keys.map(({ name }) => name);
+
+			response = Response.json({ encryptedRoomNameList });
+			response.headers.set('Access-Control-Allow-Origin', allowedOrigin);
+			response.headers.set('Access-Control-Allow-Credentials', 'true');
+
+			return response;
+		}
+
+		const splitRoomsArr = (new URL(request.url)).pathname.split('room/');
+		if (splitRoomsArr.length === 1) {
+			return new Response(`Invalid Room URL: ${request.url}`, { status: 500 });
+		}
+
+		const encryptedRoomName = splitRoomsArr.at(-1);
+		const encryptedRoomNameValue = await env[KV_NAMESPACE].get(encryptedRoomName);
+    // console.log(await env[KV_NAMESPACE].list());
+
+		if (encryptedRoomNameValue) {
+			const { key, iv } = JSON.parse(encryptedRoomNameValue);
+			const decryptedRoomName = await decryptSymmetric(encryptedRoomName, iv, key);
+			console.log(`RoomID found for encrypted string '${encryptedRoomName}': ${decryptedRoomName}`);
+
+			const id = env.WEBSOCKET_SERVER.idFromName(decryptedRoomName);
+			const stub = env.WEBSOCKET_SERVER.get(id);
+			return await stub.fetch(request);
+		} else {
+			console.log(`The encrypted room '${encryptedRoomName}' does not correspond to any room names`);
+			return new Response(`URL ${request.url} can not be found.`, { status: 404 });
+		}
+	},
 };
 
 // Durable Object
@@ -65,11 +134,7 @@ export class WebSocketServer {
     this.currentSnapshotID = 0;
     this.patch = [];
     this.presence = {};
-
-    // `blockConcurrencyWhile()` ensures no requests are delivered until initialization completes.
-    this.state.blockConcurrencyWhile(async () => {
-      this.canon = (await this.state.storage.get('count')) || { count: 0 };
-    });
+    this.canon = {};
 
     this.messageInterval = setInterval(
       () =>
@@ -169,9 +234,6 @@ export class WebSocketServer {
         this.connections = this.connections.filter(ws => ws !== server);
         delete this.presence[server.clientID];
       });
-
-      // CF input gates protect against unwanted concurrrency here
-      await this.state.storage.put('count', this.canon);
 
       return new Response(null, {
         status: 101,
