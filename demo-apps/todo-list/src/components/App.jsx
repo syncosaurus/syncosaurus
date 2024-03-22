@@ -51,7 +51,7 @@ function App() {
   const todos = useSubscribe(
     synco,
     tx => {
-      let todoObject = tx.scan((key, value) => {
+      let todoObject = tx.scan(key => {
         return key.includes('todo');
       });
       return Object.values(todoObject);
