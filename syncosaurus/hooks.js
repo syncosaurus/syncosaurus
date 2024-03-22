@@ -16,7 +16,7 @@ function useSubscribe(syncosaurus, query, initial) {
     return () => {
       unsubscribe();
     };
-  }, [syncosaurus, query]);
+  }, [syncosaurus]);
 
   //if data is still null, then return the default value
   if (data === null) {
