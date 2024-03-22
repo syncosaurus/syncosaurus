@@ -15,11 +15,14 @@ export default class Syncosaurus {
 
   subscribe(query, callback) {
     let subKeys = {};
-    let queryTransaction = new ReadTransaction(this.localState, subKeys);
+    let scan = {};
+    let queryTransaction = new ReadTransaction(this.localState, subKeys, scan);
     let queryResult = query(queryTransaction);
+    let scanFlag = scan['flag'] ? true : false;
     let subscriptionInfo = {
+      scanFlag,
       keys: subKeys,
-      query: query,
+      query,
       prevResult: queryResult,
       callback,
     };
@@ -52,13 +55,15 @@ export default class Syncosaurus {
         //re-run the query
 
         if (
-          subscription.keys[notificationKey] &&
+          (subscription.keys[notificationKey] || subscription.scanFlag) &&
           !executedSubscriptions[subIdx]
         ) {
           let newSubKeys = {};
+          let scan = {};
           let queryTransaction = new ReadTransaction(
             this.localState,
-            newSubKeys
+            newSubKeys,
+            scan
           );
           let queryResult = subscription.query(queryTransaction, newSubKeys);
           //If the query results have changed, invoke the callback (setState react function)
@@ -79,7 +84,6 @@ export default class Syncosaurus {
 
           //Reset keys in the case of `scan` method which can change keys that a subscriber pays attention to
           subscription.keys = newSubKeys;
-
           //add the exectued subscription index to the object so we don't notify the subscriber twice
           executedSubscriptions[subIdx] = true;
         }
@@ -204,11 +208,13 @@ export default class Syncosaurus {
     for (let mutator in mutators) {
       this.mutate[mutator] = args => {
         let subKeys = {};
+        let scan = {};
         const transaction = new WriteTransaction(
           this.localState,
           mutator,
           args,
-          subKeys
+          subKeys,
+          scan
         );
         this.txQueue.push(transaction);
         mutators[mutator](transaction, args); //execute mutator on local state
@@ -227,11 +233,13 @@ export default class Syncosaurus {
 
       this.replayMutate[mutator] = args => {
         let subKeys = {};
+        let scan = {};
         const transaction = new WriteTransaction(
           this.localState,
           mutator,
           args,
-          subKeys
+          subKeys,
+          scan
         );
         mutators[mutator](transaction, args);
       };

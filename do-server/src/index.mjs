@@ -1,6 +1,6 @@
 import { mutators } from '../../syncosaurus/mutators.js';
 
-const MSG_FREQUENCY = 20;
+const MSG_FREQUENCY = 2000;
 class ServerTransaction {
   constructor(canon, transactionID, mutator, mutatorArgs, patch) {
     this.transactionID = transactionID;
@@ -20,6 +20,18 @@ class ServerTransaction {
 
   isEmpty() {
     return Object.keys(this.canon).length === 0;
+  }
+
+  scan(kvCallback) {
+    let scanReturn = {};
+
+    for (let key in this.localState) {
+      if (kvCallback(key, this.localState[key])) {
+        scanReturn[key] = this.localState[key];
+      }
+    }
+
+    return scanReturn;
   }
 
   set(key, value) {

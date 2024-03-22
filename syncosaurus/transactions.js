@@ -3,9 +3,10 @@ import { monotonicFactory } from 'ulidx';
 const ulid = monotonicFactory();
 
 export class ReadTransaction {
-  constructor(localState, keysAccessed) {
+  constructor(localState, keysAccessed, scanFlag) {
     this.localState = localState;
     this.keysAccessed = keysAccessed;
+    this.scanFlag = scanFlag;
   }
 
   //returns the value for the key from local store
@@ -25,13 +26,25 @@ export class ReadTransaction {
     return Object.keys(this.localState).length === 0;
   }
 
-  //scan - to be implemented later, but returns an iterator, which is
-  //useful for getting or mutating multiple keys based on some criteria
+  //returns an object containing KV pairs where developer callback evaluates to true
+  scan(kvCallback) {
+    let scanReturn = {};
+
+    for (let key in this.localState) {
+      if (kvCallback(key, this.localState[key])) {
+        scanReturn[key] = this.localState[key];
+      }
+    }
+
+    this.scanFlag['flag'] = true;
+
+    return scanReturn;
+  }
 }
 
 export class WriteTransaction extends ReadTransaction {
-  constructor(localState, mutator, args, keysAccessed) {
-    super(localState, keysAccessed);
+  constructor(localState, mutator, args, keysAccessed, scanFlag) {
+    super(localState, keysAccessed, scanFlag);
     this.id = ulid(Date.now());
     this.mutator = mutator;
     this.mutatorArgs = args;
