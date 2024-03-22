@@ -1,6 +1,11 @@
 name = "websocket-server"
 main = "./src/index.mjs"
 compatibility_date = "2022-09-08"
+compatibility_flags = [ "nodejs_compat" ]
+
+kv_namespaces = [
+  { binding = "room_keys_2", id = "f4b7aaa8a9004a5d93de42b84afa89af" }
+]
 
 [[durable_objects.bindings]]
 name = "WEBSOCKET_SERVER"
