@@ -1,5 +1,4 @@
 import { WriteTransaction, ReadTransaction } from './transactions';
-const roomUriPrefix = 'ws://localhost:8787/websocket/room';
 
 export default class Syncosaurus {
   constructor(options) {
@@ -8,7 +7,6 @@ export default class Syncosaurus {
     this.txQueue = []; // create a tx
     this.userID = options.userID;
     this.presenceConnection;
-    this.prevServerSnapshot = null;
     this.subscriptions = [];
     this.options = options;
   }
@@ -25,9 +23,7 @@ export default class Syncosaurus {
     };
 
     this.subscriptions.push(subscriptionInfo);
-    if (queryResult) {
-      callback(queryResult);
-    }
+
     // Return a function to unsubscribe from the query when component is unmounted
     return () => {
       this.unsubscribe(query);
@@ -119,13 +115,14 @@ export default class Syncosaurus {
 
   initalizeWebsocket() {
     // establish websocket connection with DO
-    this.socket = new WebSocket(`${roomUriPrefix}/${this.roomID}`);
+    this.socket = new WebSocket(
+      `${import.meta.env.VITE_DO_ROOM_URI}/${this.roomID}`
+    );
 
     //When message received from websocket, update canon state and re-run pending mutations
     this.socket.addEventListener('message', event => {
       //parse websocket response
       const {
-        updateType,
         latestTransactionByClientId,
         snapshotID,
         patch,
@@ -133,29 +130,11 @@ export default class Syncosaurus {
         presence,
       } = JSON.parse(event.data);
 
-      //initial state is received
-      if (updateType === 'init') {
-        this.prevServerSnapshot = snapshotID;
+      if (canonState) {
         this.localState = canonState;
         this.notifyList(Object.keys(this.localState));
-        return;
-        //reset event is received - may be able to optimize this logic later
-      } else if (updateType === 'reset') {
-        this.prevServerSnapshot = snapshotID;
-        this.localState = canonState;
-        this.notifyList(Object.keys(this.localState));
-        return;
-        //check to see if reset is needed because we are missing one delta
-      } else if (
-        updateType === 'delta' &&
-        snapshotID - this.prevServerSnapshot > 1
-      ) {
-        this.socket.send(JSON.stringify({ reset: true }));
-        //no need to apply update locally because it will be encompassed when next init arrives
         return;
       }
-
-      this.prevServerSnapshot = snapshotID;
 
       //remove pending events from queue if they occured before latestTransactionByClientId
       this.txQueue = this.txQueue.filter(
