@@ -1,4 +1,4 @@
-import { WriteTransaction, ReadTransaction } from './transactions';
+import { WriteTransaction, ReadTransaction } from './transactions.js';
 const roomUriPrefix = 'ws://localhost:8787/websocket/room';
 
 export default class Syncosaurus {
