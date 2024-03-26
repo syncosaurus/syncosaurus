@@ -3,6 +3,10 @@ const roomUriPrefix = 'ws://localhost:8787/websocket/room';
 
 export default class Syncosaurus {
   constructor(options) {
+    if (!options.userID) {
+      throw new Error('userID must be provided when instantiating Syncosaurus');
+    }
+
     //create client side KV stores
     this.localState = {}; //create a KV store instance for the syncosaurus client that serves as UI display
     this.txQueue = []; // create a tx
@@ -93,6 +97,10 @@ export default class Syncosaurus {
   }
 
   launch(roomID) {
+    if (!roomID) {
+      throw new Error('roomID must be provided when launching Syncosaurus');
+    }
+
     this.setRoomID(roomID);
     this.initalizeWebsocket();
     this.initalizeMutators();

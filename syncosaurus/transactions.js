@@ -12,7 +12,12 @@ export class ReadTransaction {
   //returns the value for the key from local store
   get(key) {
     this.keysAccessed[key] = true;
-    return this.localState[key];
+
+    if (this.localState[key] === undefined) {
+      return undefined;
+    } else {
+      return JSON.parse(JSON.stringify(this.localState[key]));
+    }
   }
 
   //returns true if the key exists in local store
@@ -30,9 +35,11 @@ export class ReadTransaction {
   scan(kvCallback) {
     let scanReturn = {};
 
-    for (let key in this.localState) {
-      if (kvCallback(key, this.localState[key])) {
-        scanReturn[key] = this.localState[key];
+    const localStateCopy = JSON.parse(JSON.stringify(this.localState));
+
+    for (let key in localStateCopy) {
+      if (kvCallback(key, localStateCopy[key])) {
+        scanReturn[key] = localStateCopy[key];
       }
     }
 
