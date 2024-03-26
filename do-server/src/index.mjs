@@ -71,93 +71,69 @@ const allowedOrigin = 'http://localhost:5173';
 const KV_NAMESPACE = 'room_keys_2';
 
 export default {
-  async fetch(request, env) {
-    const { encryptSymmetric, decryptSymmetric, generateKey } = await import(
-      './encrypt.js'
-    );
-    let response;
+	async fetch(request, env) {
+		const { encryptSymmetric, decryptSymmetric, generateKey } = await import('./encrypt.js');
+		let response;
 
-    if (request.method === 'OPTIONS') {
-      return new Response(null, {
-        status: 204,
-        headers: {
-          'Access-Control-Allow-Credentials': 'true',
-          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-          'Access-Control-Allow-Origin': allowedOrigin,
-          'Access-Control-Allow-Headers': 'Content-Type',
-        },
-      });
-    }
+		if (request.method === 'OPTIONS') {
+			return new Response(null, {
+				status: 204,
+				headers: {
+					'Access-Control-Allow-Credentials': 'true',
+					'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+					'Access-Control-Allow-Origin': allowedOrigin,
+					'Access-Control-Allow-Headers': 'Content-Type',
+				},
+			});
+		}
 
-    if (request.url.endsWith('syncosaurus') && request.method === 'POST') {
-      const { newRoomName } = await request.json();
-      const key = generateKey();
-      const { ciphertext: encryptedRoomName, iv } = await encryptSymmetric(
-        newRoomName,
-        key
-      );
+		if (request.url.endsWith('syncosaurus') && request.method === 'POST') {
+			const { newRoomName } = await request.json();
+			const key = generateKey();
+			const { ciphertext: encryptedRoomName, iv } = await encryptSymmetric(newRoomName, key);
 
-      await env[KV_NAMESPACE].put(
-        encryptedRoomName,
-        JSON.stringify({ key, iv })
-      );
-      console.log(
-        `'${encryptedRoomName}': ${await env[KV_NAMESPACE].get(
-          encryptedRoomName
-        )}`
-      );
-      response = Response.json({ encryptedRoomName });
-      response.headers.set('Access-Control-Allow-Origin', allowedOrigin);
-      response.headers.set('Access-Control-Allow-Credentials', 'true');
+			await env[KV_NAMESPACE].put(encryptedRoomName, JSON.stringify({ key, iv }));
+			console.log(`'${encryptedRoomName}': ${await env[KV_NAMESPACE].get(encryptedRoomName)}`);
+			response = Response.json({ encryptedRoomName });
+			response.headers.set('Access-Control-Allow-Origin', allowedOrigin);
+			response.headers.set('Access-Control-Allow-Credentials', 'true');
 
-      return response;
-    }
+			return response;
+		}
 
-    if (request.url.endsWith('syncosaurus') && request.method === 'GET') {
-      const { keys } = await env[KV_NAMESPACE].list();
-      const encryptedRoomNameList = keys.map(({ name }) => name);
+		if (request.url.endsWith('syncosaurus') && request.method === 'GET') {
+			const { keys } = await env[KV_NAMESPACE].list();
+			const encryptedRoomNameList = keys.map(({ name }) => name);
 
-      response = Response.json({ encryptedRoomNameList });
-      response.headers.set('Access-Control-Allow-Origin', allowedOrigin);
-      response.headers.set('Access-Control-Allow-Credentials', 'true');
+			response = Response.json({ encryptedRoomNameList });
+			response.headers.set('Access-Control-Allow-Origin', allowedOrigin);
+			response.headers.set('Access-Control-Allow-Credentials', 'true');
 
-      return response;
-    }
+			return response;
+		}
 
-    const splitRoomsArr = new URL(request.url).pathname.split('room/');
-    if (splitRoomsArr.length === 1) {
-      return new Response(`Invalid Room URL: ${request.url}`, { status: 500 });
-    }
+		const splitRoomsArr = (new URL(request.url)).pathname.split('room/');
+		if (splitRoomsArr.length === 1) {
+			return new Response(`Invalid Room URL: ${request.url}`, { status: 500 });
+		}
 
-    const encryptedRoomName = splitRoomsArr.at(-1);
-    const encryptedRoomNameValue = await env[KV_NAMESPACE].get(
-      encryptedRoomName
-    );
+		const encryptedRoomName = splitRoomsArr.at(-1);
+		const encryptedRoomNameValue = await env[KV_NAMESPACE].get(encryptedRoomName);
     // console.log(await env[KV_NAMESPACE].list());
 
-    if (encryptedRoomNameValue) {
-      const { key, iv } = JSON.parse(encryptedRoomNameValue);
-      const decryptedRoomName = await decryptSymmetric(
-        encryptedRoomName,
-        iv,
-        key
-      );
-      console.log(
-        `RoomID found for encrypted string '${encryptedRoomName}': ${decryptedRoomName}`
-      );
+		if (encryptedRoomNameValue) {
+			const { key, iv } = JSON.parse(encryptedRoomNameValue);
+			const decryptedRoomName = await decryptSymmetric(encryptedRoomName, iv, key);
+			console.log(`RoomID found for encrypted string '${encryptedRoomName}': ${decryptedRoomName}`);
 
-      const id = env.WEBSOCKET_SERVER.idFromName(decryptedRoomName);
-      const stub = env.WEBSOCKET_SERVER.get(id);
-      return await stub.fetch(request);
-    } else {
-      console.log(
-        `The encrypted room '${encryptedRoomName}' does not correspond to any room names`
-      );
-      return new Response(`URL ${request.url} can not be found.`, {
-        status: 404,
-      });
-    }
-  },
+			const id = env.WEBSOCKET_SERVER.idFromName(decryptedRoomName);
+			const stub = env.WEBSOCKET_SERVER.get(id);
+			return await stub.fetch(request);
+		} else {
+			console.log(`The encrypted room '${encryptedRoomName}' does not correspond to any room names`);
+			return new Response(`URL ${request.url} can not be found.`, { status: 404 });
+		}
+	},
 };
 
 // Durable Object
