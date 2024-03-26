@@ -1,6 +1,7 @@
 import { mutators } from '../../../../syncosaurus/mutators.js';
 import Syncosaurus from '../../../../syncosaurus/syncosaurus.js';
 import { useSubscribe } from '../../../../syncosaurus/hooks.js';
+import { jwtAuthHandler } from '../../../../syncosaurus/authHandler.js';
 import { User } from '../utils/User.js';
 
 // create an instance of a User to get userID
@@ -11,6 +12,7 @@ const incrementKey = 'count';
 const synco = new Syncosaurus({
   mutators,
   userID: user.id,
+  authToken: "auth token needs to be fetched from auth server upon instantiation"
 });
 
 export const Counter = ({ roomID }) => {
