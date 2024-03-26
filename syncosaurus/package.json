@@ -12,13 +12,30 @@
     "url": "git+https://github.com/syncosaurus/syncosaurus.git"
   },
   "author": "Syncosaurus",
+  "contributors": [
+    {
+      "name": "Alex Sklar",
+      "email": "sklarfox@gmail.com"
+    },
+    {
+      "name": "Erik Margetis",
+      "email": "erik.margetis@gmail.com"
+    },
+    {
+      "name": "Joseph Liang",
+      "email": "j3liang@icloud.com"
+    },
+    {
+      "name": "Franco Waisfeld ",
+      "email": "Francowaisfeld@gmail.com"
+    }
+  ],
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/syncosaurus/syncosaurus/issues"
   },
   "homepage": "https://github.com/syncosaurus/syncosaurus#readme",
   "dependencies": {
-    "execa": "^8.0.1",
     "ulidx": "^2.3.0"
   },
   "peerDependencies": {
