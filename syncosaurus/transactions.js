@@ -3,10 +3,10 @@ import { monotonicFactory } from 'ulidx';
 const ulid = monotonicFactory();
 
 export class ReadTransaction {
-  constructor(localState, keysAccessed, scanFlag) {
+  constructor(localState) {
     this.localState = localState;
-    this.keysAccessed = keysAccessed;
-    this.scanFlag = scanFlag;
+    this.keysAccessed = {};
+    this.scanFlag = false;
   }
 
   //returns the value for the key from local store
@@ -36,15 +36,15 @@ export class ReadTransaction {
       }
     }
 
-    this.scanFlag['flag'] = true;
+    this.scanFlag = true;
 
     return scanReturn;
   }
 }
 
 export class WriteTransaction extends ReadTransaction {
-  constructor(localState, mutator, args, keysAccessed, scanFlag) {
-    super(localState, keysAccessed, scanFlag);
+  constructor(localState, mutator, args) {
+    super(localState);
     this.id = ulid(Date.now());
     this.mutator = mutator;
     this.mutatorArgs = args;

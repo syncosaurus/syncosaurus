@@ -24,7 +24,7 @@ const synco = new Syncosaurus({
   userID: user.id,
 });
 
-const roomID = 'fake';
+const roomID = 'eIBMeQwHNDhnm5NSetIJ/kn17q8=';
 synco.launch(roomID);
 
 function App() {
