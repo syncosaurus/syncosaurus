@@ -14,12 +14,13 @@ export default class Syncosaurus {
   }
 
   subscribe(query, callback) {
-    let subKeys = {};
-    let queryTransaction = new ReadTransaction(this.localState, subKeys);
+    let queryTransaction = new ReadTransaction(this.localState);
     let queryResult = query(queryTransaction);
+    let scanFlag = queryTransaction.scanFlag;
     let subscriptionInfo = {
-      keys: subKeys,
-      query: query,
+      scanFlag,
+      keys: queryTransaction.keysAccessed,
+      query,
       prevResult: queryResult,
       callback,
     };
@@ -50,19 +51,14 @@ export default class Syncosaurus {
     //they can rerender the component
     notificationKeys.forEach(notificationKey => {
       this.subscriptions.forEach((subscription, subIdx) => {
-        //If the current key is in the subscription "watch list" called `keys` and the subscription has not already been run,
-        //re-run the query
-
+        //If the current key is in the subscription "watch list" called `keys` or the subscription contains a scan
+        // and the subscription has not already been run, re-run the query
         if (
-          subscription.keys[notificationKey] &&
+          (subscription.keys[notificationKey] || subscription.scanFlag) &&
           !executedSubscriptions[subIdx]
         ) {
-          let newSubKeys = {};
-          let queryTransaction = new ReadTransaction(
-            this.localState,
-            newSubKeys
-          );
-          let queryResult = subscription.query(queryTransaction, newSubKeys);
+          let queryTransaction = new ReadTransaction(this.localState);
+          let queryResult = subscription.query(queryTransaction);
           //If the query results have changed, invoke the callback (setState react function)
           //for the subscriber, otherwise don't
           if (
@@ -78,9 +74,6 @@ export default class Syncosaurus {
             subscription.prevResult = queryResult;
             subscription.callback(queryResult);
           }
-
-          //Reset keys in the case of `scan` method which can change keys that a subscriber pays attention to
-          subscription.keys = newSubKeys;
 
           //add the exectued subscription index to the object so we don't notify the subscriber twice
           executedSubscriptions[subIdx] = true;
@@ -211,16 +204,14 @@ export default class Syncosaurus {
     this.replayMutate = {};
     for (let mutator in mutators) {
       this.mutate[mutator] = args => {
-        let subKeys = {};
         const transaction = new WriteTransaction(
           this.localState,
           mutator,
-          args,
-          subKeys
+          args
         );
         this.txQueue.push(transaction);
         mutators[mutator](transaction, args); //execute mutator on local state
-        this.notifyList(Object.keys(subKeys)); //notify subscribers
+        this.notifyList(Object.keys(transaction.keysAccessed)); //notify subscribers
 
         //send transaction to the server if this is the first time and not a replay
         this.socket.send(
@@ -234,12 +225,10 @@ export default class Syncosaurus {
       };
 
       this.replayMutate[mutator] = args => {
-        let subKeys = {};
         const transaction = new WriteTransaction(
           this.localState,
           mutator,
-          args,
-          subKeys
+          args
         );
         mutators[mutator](transaction, args);
       };
