@@ -165,27 +165,30 @@ export default class Syncosaurus {
         tx => tx.id > latestTransactionByClientId[this.userID]
       );
 
-      let notificationKeyArray = [];
-      //iterate through patch updates and run them on local state
-      patch.forEach(operation => {
-        if (operation.op === 'put') {
-          this.localState[operation.key] = operation.value;
-        } else if (operation.op === 'del') {
-          delete this.localState[operation.key];
-        } else if (operation.op === 'clear') {
-          this.localState = {};
-        }
+      if (patch && patch.length > 0) {
+        let notificationKeyArray = [];
+        //iterate through patch updates and run them on local state
+        patch.forEach(operation => {
+          if (operation.op === 'put') {
+            this.localState[operation.key] = operation.value;
+          } else if (operation.op === 'del') {
+            delete this.localState[operation.key];
+          } else if (operation.op === 'clear') {
+            this.localState = {};
+          }
 
-        notificationKeyArray.push(operation.key);
-      });
+          notificationKeyArray.push(operation.key);
+        });
 
-      //re-run any pending mutations on top of canonClone to produce the new localState
-      this.txQueue.forEach(tx => {
-        this.replayMutate[tx.mutator](tx.mutatorArgs);
-      });
+        //re-run any pending mutations on top of canonClone to produce the new localState
+        this.txQueue.forEach(tx => {
+          this.replayMutate[tx.mutator](tx.mutatorArgs);
+        });
 
-      //update
-      this.notifyList(notificationKeyArray);
+        //update subscribers
+        this.notifyList(notificationKeyArray);
+      }
+
       // This checks if the presenceConnection exists on the app
       // If the client app doesn't ever use the usePresence hook, this block is always ignored
       if (presence && this.presenceConnection) {
