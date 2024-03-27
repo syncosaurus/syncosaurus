@@ -57,6 +57,7 @@ class ServerTransaction {
   }
 }
 
+
 // TODO: This needs to be moved to an env file
 const allowedOrigin = 'http://localhost:5173';
 

@@ -5,6 +5,10 @@ const roomUriPrefix = 'ws://localhost:8787';
 
 export default class Syncosaurus {
   constructor(options) {
+    if (!options.userID) {
+      throw new Error('userID must be provided when instantiating Syncosaurus');
+    }
+
     //create client side KV stores
     this.localState = {}; //create a KV store instance for the syncosaurus client that serves as UI display
     this.txQueue = []; // create a tx
@@ -94,7 +98,12 @@ export default class Syncosaurus {
     this.socket.send(msg);
   }
 
-  async launch(roomID) {
+  // Before initializing websocket connection, check for any authentication reqs
+  launch(roomID) {
+    if (!roomID) {
+      throw new Error('roomID must be provided when launching Syncosaurus');
+    }
+
     this.setRoomID(roomID);
     this.initalizeWebsocket();
     this.initalizeMutators();
@@ -112,7 +121,7 @@ export default class Syncosaurus {
     return this.socket.readyState === 0 || this.socket.readyState === 1;
   }
 
-  async initalizeWebsocket() {
+  initalizeWebsocket() {
     // Create a room URL with or without an auth header
     const auth = this.options.auth;
     const roomUrl = auth
