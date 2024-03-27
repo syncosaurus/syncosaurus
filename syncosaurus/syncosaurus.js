@@ -97,12 +97,7 @@ export default class Syncosaurus {
   async launch(roomID) {
     const auth = this.options.auth;
     if (auth && authHandler && authHandler instanceof Function) {
-      try {
-        await authHandler(auth);
-        console.log(`Authentication succeeded with token ${auth}`);
-      } catch (error) {
-        console.error(error);
-      }
+      await authHandler(auth);
     }
     this.setRoomID(roomID);
     this.initalizeWebsocket();
