@@ -46,7 +46,6 @@ class ServerTransaction {
 export default {
   async fetch(request, env) {
     const roomID = request.url.split('/room/').at(-1);
-    // This example refers to the same Durable Object instance since it hardcodes the name "foo".
     let id = env.WEBSOCKET_SERVER.idFromName(roomID);
     let stub = env.WEBSOCKET_SERVER.get(id);
 
