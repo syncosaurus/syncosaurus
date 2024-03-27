@@ -3,9 +3,8 @@ const roomUriPrefix = 'ws://localhost:8787/websocket/room';
 
 export default class Syncosaurus {
   constructor(options) {
-    //create client side KV stores
-    this.localState = {}; //create a KV store instance for the syncosaurus client that serves as UI display
-    this.txQueue = []; // create a tx
+    this.localState = {};
+    this.txQueue = [];
     this.userID = options.userID;
     this.presenceConnection;
     this.prevServerSnapshot = null;
@@ -28,7 +27,6 @@ export default class Syncosaurus {
     if (queryResult) {
       callback(queryResult);
     }
-    // Return a function to unsubscribe from the query when component is unmounted
     return () => {
       this.unsubscribe(query);
     };
