@@ -1,6 +1,6 @@
 {
   "name": "syncosaurus",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "A framework for adding realtime, collaborative features to React applications.",
   "type": "module",
   "scripts": {
@@ -19,14 +19,11 @@
   },
   "homepage": "https://github.com/syncosaurus/syncosaurus#readme",
   "dependencies": {
-    "ulidx": "^2.3.0",
-    "wrangler": "^3.37.0"
+    "ulidx": "^2.3.0"
   },
   "peerDependencies": {
+    "wrangler": "^3.37.0",
     "react": "^18.2.0"
-  },
-  "devDependencies": {
-    "wrangler": "^3.37.0"
   },
   "exports": "./src/index.js"
 }
