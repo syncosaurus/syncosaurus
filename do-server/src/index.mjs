@@ -94,8 +94,8 @@ export default {
       }
     }
 
-    const id = env.WEBSOCKET_SERVER.idFromName(room);
-    const stub = env.WEBSOCKET_SERVER.get(id);
+    const id = env.SYNCOSAURUS_WEBSOCKET_SERVER.idFromName(room);
+    const stub = env.SYNCOSAURUS_WEBSOCKET_SERVER.get(id);
     return await stub.fetch(request);
   },
 };

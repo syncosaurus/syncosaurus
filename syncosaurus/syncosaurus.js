@@ -1,5 +1,4 @@
 import { WriteTransaction, ReadTransaction } from './transactions';
-import { authHandler } from './authHandler.js';
 
 // these need to be moved with the next commit
 const roomUriPrefix = 'ws://localhost:8787';
@@ -116,8 +115,7 @@ export default class Syncosaurus {
   async initalizeWebsocket() {
     // Create a room URL with or without an auth header
     const auth = this.options.auth;
-    const validAuthReqs = auth && authHandler instanceof Function;
-    const roomUrl = validAuthReqs
+    const roomUrl = auth
       ? `${roomUriPrefix}?auth=${auth}&room=${this.roomID}`
       : `${roomUriPrefix}?room=${this.roomID}`;
 
