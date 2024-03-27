@@ -1,6 +1,6 @@
 {
   "name": "syncosaurus",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "A framework for adding realtime, collaborative features to React applications.",
   "type": "module",
   "scripts": {
