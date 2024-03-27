@@ -55,18 +55,6 @@ class ServerTransaction {
   }
 }
 
-// Worker
-// Worker with Basic Room Encryption
-// Test Entry:
-// decryptionKey:  nDvnwoq/qrKCkBaXdHQ0riiXsT/80IrHmyiLqMeVYR4=
-// ciphertext:  b6BUmmtioZh3Mm14q7pXAijuYQ==
-// iv:  QHxgUtqF6PAPhiaQ
-// decrypted text: foo
-
-// current room URL shape: `http://my-collab-app.com/room/encryptedRoomID`
-// excalidraw live session room URL shape: `http://my-collab-app.com/#room=encryptedRoomID`
-
-// these eventually will be cloudflare env variables
 const allowedOrigin = 'http://localhost:5173';
 const KV_NAMESPACE = 'room_keys_2';
 
