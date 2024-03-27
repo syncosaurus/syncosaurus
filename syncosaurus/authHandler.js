@@ -1,3 +1,4 @@
+// this is a sample authHandler implmentation that will eventually be removed
 const authServerUrl = `http://localhost:1337`;
 
 export const authHandler = async token => {
@@ -9,11 +10,4 @@ export const authHandler = async token => {
   } catch (error) {
     console.error(error);
   }
-};
-
-export const getToken = async () => {
-  const response = await fetch(`${authServerUrl}/authorize`);
-  const token = await response.json();
-
-  return token;
 };
