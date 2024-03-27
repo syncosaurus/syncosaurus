@@ -1,3 +1,4 @@
+// this is an example mutators implementation that will eventually be removed
 export const mutators = {
   increment,
   decrement,

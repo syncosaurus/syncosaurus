@@ -1,7 +1,7 @@
 import { WriteTransaction, ReadTransaction } from './transactions';
 
-import { authHandler } from './authHandler.js';
-const roomUriPrefix = 'ws://localhost:8787/websocket/room';
+// these need to be moved with the next commit
+const roomUriPrefix = 'ws://localhost:8787';
 
 export default class Syncosaurus {
   constructor(options) {
@@ -98,18 +98,12 @@ export default class Syncosaurus {
     this.socket.send(msg);
   }
 
-
   // Before initializing websocket connection, check for any authentication reqs
-  async launch(roomID) {
+  launch(roomID) {
     if (!roomID) {
       throw new Error('roomID must be provided when launching Syncosaurus');
     }
-    
-    const auth = this.options.auth;
-    if (auth && authHandler && authHandler instanceof Function) {
-      await authHandler(auth);
-    }
-    
+
     this.setRoomID(roomID);
     this.initalizeWebsocket();
     this.initalizeMutators();
@@ -127,11 +121,15 @@ export default class Syncosaurus {
     return this.socket.readyState === 0 || this.socket.readyState === 1;
   }
 
-  async initalizeWebsocket() {
-    // establish websocket connection with DO
-    this.socket = new WebSocket(
-      `${import.meta.env.VITE_DO_ROOM_URI}/${this.roomID}`
-    );
+  initalizeWebsocket() {
+    // Create a room URL with or without an auth header
+    const auth = this.options.auth;
+    const roomUrl = auth
+      ? `${roomUriPrefix}?auth=${auth}&room=${this.roomID}`
+      : `${roomUriPrefix}?room=${this.roomID}`;
+
+    // establish websocket connection with CF worker
+    this.socket = new WebSocket(roomUrl);
 
     // wait for socket to open before accepting messages
     this.socket.addEventListener('open', () => {
