@@ -1,5 +1,8 @@
 import { WriteTransaction, ReadTransaction } from './transactions';
 
+import { authHandler } from './authHandler.js';
+const roomUriPrefix = 'ws://localhost:8787/websocket/room';
+
 export default class Syncosaurus {
   constructor(options) {
     if (!options.userID) {
@@ -95,11 +98,18 @@ export default class Syncosaurus {
     this.socket.send(msg);
   }
 
-  launch(roomID) {
+
+  // Before initializing websocket connection, check for any authentication reqs
+  async launch(roomID) {
     if (!roomID) {
       throw new Error('roomID must be provided when launching Syncosaurus');
     }
-
+    
+    const auth = this.options.auth;
+    if (auth && authHandler && authHandler instanceof Function) {
+      await authHandler(auth);
+    }
+    
     this.setRoomID(roomID);
     this.initalizeWebsocket();
     this.initalizeMutators();

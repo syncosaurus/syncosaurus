@@ -58,6 +58,22 @@ class ServerTransaction {
 const allowedOrigin = 'http://localhost:5173';
 const KV_NAMESPACE = 'room_keys_2';
 
+const getJWT = (request) => {
+	const authHeader = request.headers.get('Authorization');
+	if (!authHeader || !authHeader.startsWith('Bearer')) {
+		return null;
+	}
+
+	return authHeader.substring(6).trim();
+};
+
+const verifyAuth = async (request) => {
+  const token = getJWT(request) ?? "";
+
+  const response = await fetch(`http://localhost:1337/verify?${token}`);
+  return response;
+}
+
 export default {
 	async fetch(request, env) {
 		const { encryptSymmetric, decryptSymmetric, generateKey } = await import('./encrypt.js');
@@ -70,10 +86,17 @@ export default {
 					'Access-Control-Allow-Credentials': 'true',
 					'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
 					'Access-Control-Allow-Origin': allowedOrigin,
-					'Access-Control-Allow-Headers': 'Content-Type',
+					'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 				},
 			});
 		}
+
+    const verifiedAuth = await verifyAuth(request);
+    console.log(verifiedAuth);
+
+    if (!verifiedAuth) {
+      return new Response('Missing or Invalid Authenticaiton token', { status: 401 });
+    }
 
 		if (request.url.endsWith('syncosaurus') && request.method === 'POST') {
 			const { newRoomName } = await request.json();
@@ -107,7 +130,7 @@ export default {
 
 		const encryptedRoomName = splitRoomsArr.at(-1);
 		const encryptedRoomNameValue = await env[KV_NAMESPACE].get(encryptedRoomName);
-    // console.log(await env[KV_NAMESPACE].list());
+    console.log(await env[KV_NAMESPACE].list());
 
 		if (encryptedRoomNameValue) {
 			const { key, iv } = JSON.parse(encryptedRoomNameValue);
