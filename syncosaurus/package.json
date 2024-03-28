@@ -1,24 +1,48 @@
 {
   "name": "syncosaurus",
-  "version": "1.0.0",
+  "version": "0.0.5",
   "description": "A framework for adding realtime, collaborative features to React applications.",
-  "main": "syncosaurus.js",
+  "main": "index.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "wrangler dev ./do/index.mjs"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/syncosaurus/syncosaurus.git"
   },
-  "author": "Syncosaurus",
+  "contributors": [
+    {
+      "name": "Alex Sklar",
+      "email": "sklarfox@gmail.com"
+    },
+    {
+      "name": "Erik Margetis",
+      "email": "erik.margetis@gmail.com"
+    },
+    {
+      "name": "Joseph Liang",
+      "email": "j3liang@icloud.com"
+    },
+    {
+      "name": "Franco Waisfeld ",
+      "email": "Francowaisfeld@gmail.com"
+    }
+  ],
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/syncosaurus/syncosaurus/issues"
   },
   "homepage": "https://github.com/syncosaurus/syncosaurus#readme",
   "dependencies": {
-    "ulidx": "^2.3.0",
-    "acorn": "^8.11.3",
-    "nanoid": "^5.0.6"
-  }
+    "ulidx": "^2.3.0"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0",
+    "wrangler": "^3.37.0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "exports": "./src/index.js"
 }
