@@ -1,21 +1,18 @@
 import { WriteTransaction, ReadTransaction } from './transactions';
-
-// these need to be moved with the next commit
-const roomUriPrefix = 'ws://localhost:8787';
+import { validateSyncosaurusOptions } from './utils';
+import { nanoid } from 'nanoid';
 
 export default class Syncosaurus {
   constructor(options) {
-    if (!options.userID) {
-      throw new Error('userID must be provided when instantiating Syncosaurus');
-    }
+    validateSyncosaurusOptions(options);
 
     //create client side KV stores
     this.localState = {}; //create a KV store instance for the syncosaurus client that serves as UI display
     this.txQueue = []; // create a tx
-    this.userID = options.userID;
     this.presenceConnection;
     this.prevServerSnapshot = null;
     this.subscriptions = [];
+    this.userID = options.userID || nanoid();
     this.options = options;
   }
 
@@ -125,8 +122,8 @@ export default class Syncosaurus {
     // Create a room URL with or without an auth header
     const auth = this.options.auth;
     const roomUrl = auth
-      ? `${roomUriPrefix}?auth=${auth}&room=${this.roomID}`
-      : `${roomUriPrefix}?room=${this.roomID}`;
+      ? `${this.server}?auth=${auth}&room=${this.roomID}`
+      : `${this.server}?room=${this.roomID}`;
 
     // establish websocket connection with CF worker
     this.socket = new WebSocket(roomUrl);
