@@ -103,7 +103,6 @@ export default class Syncosaurus {
     }
     this.setRoomID(roomID);
     this.initializeWebsocket(roomID);
-    this.initializeMutators();
   }
 
   setRoomID(roomID) {
@@ -123,7 +122,6 @@ export default class Syncosaurus {
     const roomUrl = this.auth
       ? `${this.server}?auth=${auth}&room=${roomID}`
       : `${this.server}?room=${roomID}`;
-    console.log(roomUrl);
     // establish websocket connection with CF worker
     this.socket = new WebSocket(roomUrl);
 
@@ -134,10 +132,6 @@ export default class Syncosaurus {
 
     //When message received from websocket, update canon state and re-run pending mutations
     this.socket.addEventListener('message', event => {
-      if (!this.hasLiveWebsocket()) {
-        return;
-      }
-
       //parse websocket response
       const {
         updateType,
@@ -225,7 +219,7 @@ export default class Syncosaurus {
           args
         );
         this.txQueue.push(transaction);
-        mutators[mutator](transaction, args); //execute mutator on local state
+        this.mutators[mutator](transaction, args); //execute mutator on local state
         this.notifyList(Object.keys(transaction.keysAccessed)); //notify subscribers
 
         //send transaction to the server if this is the first time and not a replay
@@ -245,7 +239,7 @@ export default class Syncosaurus {
           mutator,
           args
         );
-        mutators[mutator](transaction, args);
+        this.mutators[mutator](transaction, args);
       };
     }
   }
