@@ -2,3 +2,4 @@
 wrangler.toml
 mutators.js
 authHandler.js
+syncosaurus.json

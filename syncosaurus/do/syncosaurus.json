@@ -1,0 +1,8 @@
+{
+  "projectName": "asdfasdf",
+  "compatibilityDate": "2024-03-28",
+  "encryption": false,
+  "authentication": false,
+  "serverMsgFrequency": 16,
+  "enableRoomStorage": false
+}

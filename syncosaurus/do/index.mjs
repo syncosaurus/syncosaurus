@@ -1,8 +1,9 @@
+import config from './syncosaurus.json';
 import mutators from './mutators.js';
 import { authHandler } from './authHandler.js';
 
-// TODO: This needs to be moved to be an environment variable
-const MSG_FREQUENCY = 16;
+const MSG_FREQUENCY = config.serverMsgFrequency;
+const enableRoomStorage = config.enableRoomStorage;
 
 class ServerTransaction {
   constructor(canon, transactionID, mutator, mutatorArgs, patch) {
