@@ -1,7 +1,0 @@
-{
-  "type": "module",
-  "dependencies": {
-    "acorn": "^8.11.3",
-    "nanoid": "^5.0.6"
-  }
-}
