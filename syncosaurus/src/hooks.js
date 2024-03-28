@@ -41,7 +41,10 @@ function useUpdateMyPresence(syncosaurus) {
       if (!syncosaurus.hasLiveWebsocket()) {
         return;
       }
-      const mousePosition = { x: e.clientX, y: e.clientY };
+      const mousePosition = {
+        x: e.clientX + window.scrollX,
+        y: e.clientY + window.scrollY,
+      };
       syncosaurus.updateMyPresence(mousePosition);
     });
 
