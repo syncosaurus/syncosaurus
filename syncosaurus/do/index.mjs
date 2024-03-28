@@ -1,5 +1,5 @@
-import { mutators } from '../../syncosaurus/mutators.js';
-import { authHandler } from '../../syncosaurus/authHandler.js';
+import { mutators } from './mutators.js';
+import { authHandler } from './authHandler.js';
 
 // TODO: This needs to be moved to be an environment variable
 const MSG_FREQUENCY = 16;
@@ -57,14 +57,12 @@ class ServerTransaction {
   }
 }
 
-
 // TODO: This needs to be moved to an env file
 const allowedOrigin = 'http://localhost:5173';
 
 // Worker
 export default {
   async fetch(request, env) {
-
     // Handle CORS preflight requests
     if (request.method === 'OPTIONS') {
       return new Response(null, {

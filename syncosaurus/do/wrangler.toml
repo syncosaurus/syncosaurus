@@ -1,0 +1,12 @@
+name = "websocket-server"
+main = "./index.mjs"
+compatibility_date = "2022-09-08"
+compatibility_flags = [ "nodejs_compat" ]
+
+[[durable_objects.bindings]]
+name = "SYNCOSAURUS_WEBSOCKET_SERVER"
+class_name = "WebSocketServer"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["WebSocketServer"]
