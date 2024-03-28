@@ -1,6 +1,6 @@
 // error validation here
 import { parse } from 'acorn';
-import mutators from './mutators';
+import mutators from '../../do/mutators';
 
 const validateUrl = url => {
   try {
@@ -28,12 +28,13 @@ const validateMutators = mutators => {
 
   return true;
 };
+
 const validateSyncosaurusOptions = options => {
   if (!options.server) {
     throw new Error(
       'A server URL must be provided when instantiating Syncosaurus'
     );
-  } else if (!validateUrl(server)) {
+  } else if (!validateUrl(options.server)) {
     throw new Error(`The server URL '${options.server} is not valid`);
   } else if (!validateMutators(mutators)) {
     throw new Error(
@@ -42,4 +43,4 @@ const validateSyncosaurusOptions = options => {
   }
 };
 
-export default { validateSyncosaurusOptions };
+export { validateSyncosaurusOptions };

@@ -1,5 +1,5 @@
-import Syncosaurus from './syncosaurus.js';
-import { useSubscribe, usePresence, useUpdateMyPresence } from './hooks.js';
+import Syncosaurus from './src/syncosaurus.js';
+import { useSubscribe, usePresence, useUpdateMyPresence } from './src/hooks.js';
 
 export default Syncosaurus;
 

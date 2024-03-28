@@ -1,19 +1,20 @@
-import { WriteTransaction, ReadTransaction } from './transactions';
-import { validateSyncosaurusOptions } from './utils';
+import { WriteTransaction, ReadTransaction } from './transactions.js';
+import { validateSyncosaurusOptions } from './utils/utils.js';
 import { nanoid } from 'nanoid';
 
 export default class Syncosaurus {
-  constructor(options) {
-    validateSyncosaurusOptions(options);
-
-    //create client side KV stores
-    this.localState = {}; //create a KV store instance for the syncosaurus client that serves as UI display
-    this.txQueue = []; // create a tx
+  constructor({ mutators, userID, server, auth }) {
+    validateSyncosaurusOptions({ mutators, server });
+    this.localState = {};
+    this.txQueue = [];
     this.presenceConnection;
     this.prevServerSnapshot = null;
     this.subscriptions = [];
-    this.userID = options.userID || nanoid();
-    this.options = options;
+    this.userID = userID || nanoid();
+    this.server = server;
+    this.auth = auth;
+    this.mutators = mutators;
+    this.initializeMutators();
   }
 
   subscribe(query, callback) {
@@ -96,14 +97,13 @@ export default class Syncosaurus {
   }
 
   // Before initializing websocket connection, check for any authentication reqs
-  launch(roomID) {
+  async launch(roomID) {
     if (!roomID) {
       throw new Error('roomID must be provided when launching Syncosaurus');
     }
-
     this.setRoomID(roomID);
-    this.initalizeWebsocket();
-    this.initalizeMutators();
+    this.initializeWebsocket(roomID);
+    this.initializeMutators();
   }
 
   setRoomID(roomID) {
@@ -118,13 +118,12 @@ export default class Syncosaurus {
     return this.socket.readyState === 0 || this.socket.readyState === 1;
   }
 
-  initalizeWebsocket() {
+  initializeWebsocket(roomID) {
     // Create a room URL with or without an auth header
-    const auth = this.options.auth;
-    const roomUrl = auth
-      ? `${this.server}?auth=${auth}&room=${this.roomID}`
-      : `${this.server}?room=${this.roomID}`;
-
+    const roomUrl = this.auth
+      ? `${this.server}?auth=${auth}&room=${roomID}`
+      : `${this.server}?room=${roomID}`;
+    console.log(roomUrl);
     // establish websocket connection with CF worker
     this.socket = new WebSocket(roomUrl);
 
@@ -212,14 +211,13 @@ export default class Syncosaurus {
     });
   }
 
-  initalizeMutators() {
+  initializeMutators() {
     //The new mutators will be run with a new transaction instance with prefilled
     //so everytime it's called it creates a new transaction and adds it to the queue and the
     //kvStore
-    const { mutators } = this.options;
     this.mutate = {};
     this.replayMutate = {};
-    for (let mutator in mutators) {
+    for (let mutator in this.mutators) {
       this.mutate[mutator] = args => {
         const transaction = new WriteTransaction(
           this.localState,

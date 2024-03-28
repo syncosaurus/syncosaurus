@@ -1,4 +1,4 @@
-import { mutators } from './mutators.js';
+import mutators from './mutators.js';
 import { authHandler } from './authHandler.js';
 
 // TODO: This needs to be moved to be an environment variable
