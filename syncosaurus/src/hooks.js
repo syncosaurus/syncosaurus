@@ -38,12 +38,18 @@ function usePresence(syncosaurus) {
 function useUpdateMyPresence(syncosaurus) {
   useEffect(() => {
     const listener = window.addEventListener('pointermove', e => {
-      const mousePosition = { x: e.clientX, y: e.clientY };
+      if (!syncosaurus.hasLiveWebsocket()) {
+        return;
+      }
+      const mousePosition = {
+        x: e.clientX + window.scrollX,
+        y: e.clientY + window.scrollY,
+      };
       syncosaurus.updateMyPresence(mousePosition);
     });
 
     return () => {
-      removeEventListener('mousemove', listener);
+      removeEventListener('pointermove', listener);
     };
   }, [syncosaurus]);
 }

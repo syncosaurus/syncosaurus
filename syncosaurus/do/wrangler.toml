@@ -1,5 +1,5 @@
 name = "websocket-server"
-main = "./src/index.mjs"
+main = "./index.mjs"
 compatibility_date = "2022-09-08"
 compatibility_flags = [ "nodejs_compat" ]
 

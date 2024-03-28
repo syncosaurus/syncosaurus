@@ -1,5 +1,5 @@
 // this is an example mutators implementation that will eventually be removed
-export const mutators = {
+export default {
   increment,
   decrement,
   addTodo,
@@ -22,7 +22,6 @@ async function decrement(tx, { key, delta }) {
   const next = (prev ?? 0) - delta;
   tx.set(key, next);
 }
-
 
 //Mutators for the Todo Application
 async function addTodo(tx, { id, text }) {
@@ -47,5 +46,4 @@ function modifyShape(tx, args) {
   const prev = tx.get(id);
   const next = { ...prev, ...changes };
   tx.set(id, next);
-
 }
