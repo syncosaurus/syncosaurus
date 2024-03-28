@@ -2,10 +2,11 @@
   "name": "syncosaurus",
   "version": "0.0.5",
   "description": "A framework for adding realtime, collaborative features to React applications.",
-  "main": "index.js",
   "type": "module",
+  "exports": "./index.js",
   "scripts": {
-    "dev": "wrangler dev ./do/index.mjs"
+    "dev": "wrangler dev ./do/index.mjs",
+    "deploy": "wrangler deploy ./do/index.mjs"
   },
   "repository": {
     "type": "git",
@@ -26,7 +27,7 @@
     },
     {
       "name": "Franco Waisfeld ",
-      "email": "Francowaisfeld@gmail.com"
+      "email": "francowaisfeld@gmail.com"
     }
   ],
   "license": "ISC",
@@ -35,14 +36,12 @@
   },
   "homepage": "https://github.com/syncosaurus/syncosaurus#readme",
   "dependencies": {
-    "ulidx": "^2.3.0"
+    "ulidx": "^2.3.0",
+    "acorn": "^8.11.3",
+    "nanoid": "^5.0.6"
   },
   "peerDependencies": {
     "react": "^18.2.0",
     "wrangler": "^3.37.0"
-  },
-  "devDependencies": {
-    "concurrently": "^8.2.2"
-  },
-  "exports": "./src/index.js"
+  }
 }
