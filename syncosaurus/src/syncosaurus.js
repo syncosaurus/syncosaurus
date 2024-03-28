@@ -114,7 +114,7 @@ export default class Syncosaurus {
       return false;
     }
 
-    return this.socket.readyState === 0 || this.socket.readyState === 1;
+    return this.socket.readyState === 1;
   }
 
   initializeWebsocket(roomID) {
