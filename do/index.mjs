@@ -96,7 +96,6 @@ export default {
 // Durable Object
 export class WebSocketServer {
   constructor(state, env) {
-    console.log('making a new one');
     this.MSG_FREQUENCY = env.MSG_FREQUENCY;
     this.mutators = mutators;
     this.state = state;
@@ -107,7 +106,7 @@ export class WebSocketServer {
     this.currentSnapshotID = 0;
     this.patch = [];
     this.presence = {};
-    this.canon = this.storage.get('canon') || {};
+    this.canon = {};
 
     this.messageInterval = setInterval(
       () =>
@@ -130,14 +129,18 @@ export class WebSocketServer {
     );
 
     if (env.USE_STORAGE) {
-      console.log('using storage');
+      this.loadStorage();
       this.autosaveInterval = setInterval(() => {
+        this.storage.put('canon', { ...this.canon });
         console.log('autosaving');
-        this.storage.put('canon', this.canon);
       }, env.AUTOSAVE_INTERVAL);
     } else {
       console.log('not using storage');
     }
+  }
+
+  async loadStorage() {
+    this.canon = await this.storage.get('canon');
   }
 
   broadcast(data) {

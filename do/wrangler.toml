@@ -15,4 +15,4 @@ new_classes = ["WebSocketServer"]
 ALLOWED_ORIGIN = "http://localhost:5173"
 USE_STORAGE = true
 MSG_FREQUENCY = 16
-AUTOSAVE_INTERVAL = 1000
+AUTOSAVE_INTERVAL = 30000
