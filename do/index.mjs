@@ -128,6 +128,7 @@ export class WebSocketServer {
       this.MSG_FREQUENCY
     );
 
+    // Conditional check for storage dependent logic
     if (env.USE_STORAGE) {
       this.loadStorage();
       this.autosaveInterval = setInterval(() => {
@@ -217,6 +218,12 @@ export class WebSocketServer {
 
     server.addEventListener('close', async cls => {
       this.connections = this.connections.filter(ws => ws !== server);
+
+      if (this.autosaveInterval && this.connections.length === 0) {
+        // This executes if autosave is in use, and the just disconnected WS is the last one
+        console.log('Last websocket disconnected. Saving state.');
+        this.storage.put('canon', { ...this.canon });
+      }
       delete this.presence[server.clientID];
     });
 
