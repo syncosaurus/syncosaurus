@@ -142,6 +142,9 @@ export class WebSocketServer {
 
   async loadStorage() {
     this.canon = await this.storage.get('canon');
+    if (this.canon === undefined) {
+      this.canon = {};
+    }
   }
 
   broadcast(data) {
