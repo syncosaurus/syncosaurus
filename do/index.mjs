@@ -1,9 +1,6 @@
 import mutators from './mutators.js';
 import { authHandler } from './authHandler.js';
 
-// TODO: This needs to be moved to be an environment variable
-const MSG_FREQUENCY = 16;
-
 class ServerTransaction {
   constructor(canon, transactionID, mutator, mutatorArgs, patch) {
     this.transactionID = transactionID;
@@ -57,9 +54,6 @@ class ServerTransaction {
   }
 }
 
-// TODO: This needs to be moved to an env file
-const allowedOrigin = 'http://localhost:5173';
-
 // Worker
 export default {
   async fetch(request, env) {
@@ -70,7 +64,7 @@ export default {
         headers: {
           'Access-Control-Allow-Credentials': 'true',
           'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-          'Access-Control-Allow-Origin': allowedOrigin,
+          'Access-Control-Allow-Origin': env.ALLOWED_ORIGIN,
           'Access-Control-Allow-Headers':
             request.headers.get('Access-Control-Request-Headers') || '',
         },
@@ -102,15 +96,18 @@ export default {
 // Durable Object
 export class WebSocketServer {
   constructor(state, env) {
+    console.log('making a new one');
+    this.MSG_FREQUENCY = env.MSG_FREQUENCY;
     this.mutators = mutators;
     this.state = state;
+    this.storage = this.state.storage;
     this.env = env;
     this.connections = [];
     this.latestTransactionByClientId = {};
     this.currentSnapshotID = 0;
     this.patch = [];
     this.presence = {};
-    this.canon = {};
+    this.canon = this.storage.get('canon') || {};
 
     this.messageInterval = setInterval(
       () =>
@@ -126,11 +123,21 @@ export class WebSocketServer {
           const json = JSON.stringify(currentSnapshot);
           this.broadcast(json);
 
-          this.currentSnapshotID += 1; // TODO convert to uulid?
+          this.currentSnapshotID += 1;
           this.patch = [];
         }),
-      MSG_FREQUENCY
+      this.MSG_FREQUENCY
     );
+
+    if (env.USE_STORAGE) {
+      console.log('using storage');
+      this.autosaveInterval = setInterval(() => {
+        console.log('autosaving');
+        this.storage.put('canon', this.canon);
+      }, env.AUTOSAVE_INTERVAL);
+    } else {
+      console.log('not using storage');
+    }
   }
 
   broadcast(data) {
