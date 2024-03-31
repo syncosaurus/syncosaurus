@@ -10,3 +10,9 @@ class_name = "WebSocketServer"
 [[migrations]]
 tag = "v1"
 new_classes = ["WebSocketServer"]
+
+[vars]
+ALLOWED_ORIGIN = "http://localhost:5173"
+USE_STORAGE = true
+MSG_FREQUENCY = 16
+AUTOSAVE_INTERVAL = 30000

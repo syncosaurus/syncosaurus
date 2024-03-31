@@ -1,9 +1,6 @@
 import mutators from './mutators.js';
 import { authHandler } from './authHandler.js';
 
-// TODO: This needs to be moved to be an environment variable
-const MSG_FREQUENCY = 16;
-
 class ServerTransaction {
   constructor(canon, transactionID, mutator, mutatorArgs, patch) {
     this.transactionID = transactionID;
@@ -57,9 +54,6 @@ class ServerTransaction {
   }
 }
 
-// TODO: This needs to be moved to an env file
-const allowedOrigin = 'http://localhost:5173';
-
 // Worker
 export default {
   async fetch(request, env) {
@@ -70,7 +64,7 @@ export default {
         headers: {
           'Access-Control-Allow-Credentials': 'true',
           'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-          'Access-Control-Allow-Origin': allowedOrigin,
+          'Access-Control-Allow-Origin': env.ALLOWED_ORIGIN,
           'Access-Control-Allow-Headers':
             request.headers.get('Access-Control-Request-Headers') || '',
         },
@@ -102,8 +96,10 @@ export default {
 // Durable Object
 export class WebSocketServer {
   constructor(state, env) {
+    this.MSG_FREQUENCY = env.MSG_FREQUENCY;
     this.mutators = mutators;
     this.state = state;
+    this.storage = this.state.storage;
     this.env = env;
     this.connections = [];
     this.latestTransactionByClientId = {};
@@ -126,11 +122,29 @@ export class WebSocketServer {
           const json = JSON.stringify(currentSnapshot);
           this.broadcast(json);
 
-          this.currentSnapshotID += 1; // TODO convert to uulid?
+          this.currentSnapshotID += 1;
           this.patch = [];
         }),
-      MSG_FREQUENCY
+      this.MSG_FREQUENCY
     );
+
+    // Conditional check for storage dependent logic
+    if (env.USE_STORAGE) {
+      this.loadStorage();
+      this.autosaveInterval = setInterval(() => {
+        this.storage.put('canon', { ...this.canon });
+        console.log('autosaving');
+      }, env.AUTOSAVE_INTERVAL);
+    } else {
+      console.log('not using storage');
+    }
+  }
+
+  async loadStorage() {
+    this.canon = await this.storage.get('canon');
+    if (this.canon === undefined) {
+      this.canon = {};
+    }
   }
 
   broadcast(data) {
@@ -207,6 +221,12 @@ export class WebSocketServer {
 
     server.addEventListener('close', async cls => {
       this.connections = this.connections.filter(ws => ws !== server);
+
+      if (this.autosaveInterval && this.connections.length === 0) {
+        // This executes if autosave is in use, and the just disconnected WS is the last one
+        console.log('Last websocket disconnected. Saving state.');
+        this.storage.put('canon', { ...this.canon });
+      }
       delete this.presence[server.clientID];
     });
 
