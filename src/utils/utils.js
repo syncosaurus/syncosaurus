@@ -1,6 +1,5 @@
 // error validation here
 import { parse } from 'acorn';
-import mutators from '../../do/mutators';
 
 const validateUrl = url => {
   try {
@@ -19,7 +18,7 @@ const validateMutators = mutators => {
   for (let mutator in mutators) {
     const paramArr = parse(mutators[mutator], {
       ecmaVersion: 14,
-    }).body[0].params.map(param => param.name);
+    }).body[0].expression.params.map(param => param.name);
 
     if (!(mutators[mutator] instanceof Function) || !paramArr.includes('tx')) {
       return false;
@@ -36,7 +35,7 @@ const validateSyncosaurusOptions = options => {
     );
   } else if (!validateUrl(options.server)) {
     throw new Error(`The server URL '${options.server} is not valid`);
-  } else if (!validateMutators(mutators)) {
+  } else if (!validateMutators(options.mutators)) {
     throw new Error(
       "Mutators must all be functions, and all must have 'tx' as their first parameter"
     );
