@@ -1,6 +1,3 @@
-import mutators from './mutators.js';
-import { authHandler } from './authHandler.js';
-
 class ServerTransaction {
   constructor(canon, transactionID, mutator, mutatorArgs, patch) {
     this.transactionID = transactionID;
@@ -75,9 +72,20 @@ export default {
     const urlParams = url.searchParams;
     const auth = urlParams.get('auth');
     const room = urlParams.get('room');
+    let authHandler;
 
-    // If authHandler and auth exist, invoke the authentication handler
-    if (auth && authHandler instanceof Function) {
+    // If auth token exists, try to import authHandler function
+    if (auth) {
+      try {
+        const importedObj = await import('../src/authHandler.js');
+        authHandler = importedObj instanceof Function ? importedObj : null;
+      } catch (error) {
+        console.error(`Error importing authHandler from 'authHandler.js': ${error}`);
+      }
+    }
+
+    // If authHandler and auth both are valid, invoke the authentication handler
+    if (auth && authHandler) {
       try {
         await authHandler(auth);
       } catch (error) {
@@ -97,7 +105,6 @@ export default {
 export class WebSocketServer {
   constructor(state, env) {
     this.MSG_FREQUENCY = env.MSG_FREQUENCY;
-    this.mutators = mutators;
     this.state = state;
     this.storage = this.state.storage;
     this.env = env;
@@ -107,6 +114,16 @@ export class WebSocketServer {
     this.patch = [];
     this.presence = {};
     this.canon = {};
+
+    // Guard against invalid mutators.js module and import errors when initializing mutators
+    this.state.blockConcurrencyWhile(async() => {
+      try {
+        this.mutators = await import('../src/mutators.js');
+      } catch(error) {
+        this.mutators = {};
+        console.error(`Mutators failed to be imported correctly: ${error}`);
+      }
+    });
 
     this.messageInterval = setInterval(
       () =>
