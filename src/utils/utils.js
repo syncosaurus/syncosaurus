@@ -1,5 +1,4 @@
 // error validation here
-import { parse } from 'acorn';
 
 const validateUrl = url => {
   try {
@@ -16,11 +15,7 @@ const validateMutators = mutators => {
   }
 
   for (let mutator in mutators) {
-    const paramArr = parse(mutators[mutator], {
-      ecmaVersion: 14,
-    }).body[0].expression.params.map(param => param.name);
-
-    if (!(mutators[mutator] instanceof Function) || !paramArr.includes('tx')) {
+    if (!(mutators[mutator] instanceof Function)) {
       return false;
     }
   }
